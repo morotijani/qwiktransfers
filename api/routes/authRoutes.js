@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { register, login, getProfile, getAllUsers, updateKYC, updateProfile, changePassword } = require('../controllers/authController');
+const { register, login, getProfile, getAllUsers, updateKYC, updateProfile, changePassword, setPin, verifyPin } = require('../controllers/authController');
 const { verifyToken, verifyAdmin } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
 
