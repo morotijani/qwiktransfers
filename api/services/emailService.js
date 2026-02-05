@@ -1,13 +1,18 @@
 const nodemailer = require('nodemailer');
+require('dotenv').config();
 
 const transporter = nodemailer.createTransport({
     host: process.env.MAIL_HOST || 'smtp.mailtrap.io',
-    port: process.env.MAIL_PORT || 2525,
+    port: Number(process.env.MAIL_PORT) || 2525,
     auth: {
         user: process.env.MAIL_USER,
         pass: process.env.MAIL_PASS
     }
 });
+
+if (!process.env.MAIL_USER || !process.env.MAIL_PASS) {
+    console.warn('WARNING: MAIL_USER or MAIL_PASS is not defined in .env');
+}
 
 const APP_URL = process.env.APP_URL || 'http://localhost:5173';
 const PEACH = '#f2bc94';
@@ -16,7 +21,7 @@ const DEEP_BROWN = '#4a1d17';
 const sendEmail = async (to, subject, html) => {
     try {
         await transporter.sendMail({
-            from: '"Qwiktransfers" <no-reply@qwiktransfers.com>',
+            from: `"Qwiktransfers" <${process.env.MAIL_USER}>`,
             to,
             subject,
             html: `

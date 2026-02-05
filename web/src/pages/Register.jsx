@@ -62,7 +62,7 @@ const Register = () => {
                 country,
                 pin
             });
-            navigate('/register-success');
+            navigate('/register-success', { state: { email } });
         } catch (err) {
             setError(err.response?.data?.error || 'Registration failed. Try a different email.');
         } finally {
@@ -90,7 +90,7 @@ const Register = () => {
                         <>
                             <div className="form-group">
                                 <label>Full Name</label>
-                                <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="John Doe" required />
+                                <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Hamza Ibrahim" required />
                             </div>
                             <div className="form-group">
                                 <label>Email Address</label>

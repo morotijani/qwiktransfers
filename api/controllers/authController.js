@@ -1,4 +1,5 @@
-const { User } = require('../models');
+const { User, sequelize } = require('../models');
+const { Op } = require('sequelize');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
@@ -8,6 +9,13 @@ const { sendSMS } = require('../services/smsService');
 const register = async (req, res) => {
     try {
         const { email, password, full_name, phone, country, role } = req.body;
+
+        // Check if user already exists
+        const existingUser = await User.findOne({ where: { email } });
+        if (existingUser) {
+            return res.status(400).json({ error: 'Email is already registered' });
+        }
+
         const hashedPassword = await bcrypt.hash(password, 10);
         const verificationToken = crypto.randomBytes(32).toString('hex');
 
@@ -22,6 +30,7 @@ const register = async (req, res) => {
             balance_ghs: 0.0,
             balance_cad: 0.0,
             verification_token: verificationToken,
+            verification_token_expires: new Date(Date.now() + 86400000), // 24 hours
             is_email_verified: false
         });
 
@@ -41,11 +50,17 @@ const register = async (req, res) => {
 const verifyEmail = async (req, res) => {
     try {
         const { token } = req.query;
-        const user = await User.findOne({ where: { verification_token: token } });
+        const user = await User.findOne({
+            where: {
+                verification_token: token,
+                verification_token_expires: { [Op.gt]: new Date() }
+            }
+        });
         if (!user) return res.status(404).json({ error: 'Invalid or expired token' });
 
         user.is_email_verified = true;
         user.verification_token = null;
+        user.verification_token_expires = null;
         await user.save();
 
         res.json({ message: 'Email verified successfully!' });
@@ -76,7 +91,7 @@ const forgotPassword = async (req, res) => {
 
         const resetToken = crypto.randomBytes(32).toString('hex');
         user.reset_password_token = resetToken;
-        user.reset_password_expires = Date.now() + 3600000; // 1 hour
+        user.reset_password_expires = new Date(Date.now() + 3600000); // 1 hour
         await user.save();
 
         await sendResetPasswordEmail(email, resetToken);
@@ -92,7 +107,7 @@ const resetPassword = async (req, res) => {
         const user = await User.findOne({
             where: {
                 reset_password_token: token,
-                reset_password_expires: { [require('sequelize').Op.gt]: Date.now() }
+                reset_password_expires: { [Op.gt]: new Date() }
             }
         });
 

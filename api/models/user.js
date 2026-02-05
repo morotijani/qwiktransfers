@@ -15,7 +15,11 @@ module.exports = (sequelize, DataTypes) => {
     }
   }
   User.init({
-    email: DataTypes.STRING,
+    email: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: true
+    },
     password: DataTypes.STRING,
     role: DataTypes.STRING,
     kyc_status: DataTypes.STRING, // 'pending', 'verified', 'rejected'
@@ -32,6 +36,7 @@ module.exports = (sequelize, DataTypes) => {
       defaultValue: false
     },
     verification_token: DataTypes.STRING,
+    verification_token_expires: DataTypes.DATE,
     reset_password_token: DataTypes.STRING,
     reset_password_expires: DataTypes.DATE
   }, {
