@@ -5,9 +5,9 @@ import { useNavigate, Link } from 'react-router-dom';
 const countryCodes = {
     'Ghana': '+233',
     'Canada': '+1',
-    'Nigeria': '+234',
-    'USA': '+1',
-    'UK': '+44'
+    // 'Nigeria': '+234',
+    // 'USA': '+1',
+    // 'UK': '+44'
 };
 
 const Register = () => {

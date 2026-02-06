@@ -25,7 +25,8 @@ const createTransaction = async (req, res) => {
 
         // Send SMS Notification
         if (user && user.phone) {
-            await sendSMS(user.phone, `Your transfer request of ${amount_sent} ${type.split('-')[0]} to ${recipient_details.name} has been initiated. Status: Pending.`);
+            const refMsg = recipient_details.admin_reference ? ` Ref: ${recipient_details.admin_reference}.` : '';
+            await sendSMS(user.phone, `Your transfer request of ${amount_sent} ${type.split('-')[0]} to ${recipient_details.name} has been initiated.${refMsg} Status: Pending.`);
         }
 
         res.status(201).json(transaction);
