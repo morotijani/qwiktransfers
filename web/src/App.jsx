@@ -6,6 +6,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import RegisterSuccess from './pages/RegisterSuccess';
 import EmailVerified from './pages/EmailVerified';
+import ResendVerification from './pages/ResendVerification';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import UserDashboard from './pages/UserDashboard';
@@ -28,6 +29,7 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/register-success" element={<RegisterSuccess />} />
           <Route path="/verify-email" element={<EmailVerified />} />
+          <Route path="/resend-verification" element={<ResendVerification />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
 

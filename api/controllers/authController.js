@@ -3,7 +3,7 @@ const { Op } = require('sequelize');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const { sendVerificationEmail, sendResetPasswordEmail } = require('../services/emailService');
+const { sendVerificationEmail, sendVerificationSuccessEmail, sendResetPasswordEmail } = require('../services/emailService');
 const { sendSMS } = require('../services/smsService');
 
 const register = async (req, res) => {
@@ -35,7 +35,7 @@ const register = async (req, res) => {
         });
 
         // Send Communications
-        await sendVerificationEmail(email, verificationToken);
+        await sendVerificationEmail(email, verificationToken, full_name);
         if (phone) {
             await sendSMS(phone, `Welcome to Qwiktransfers! Please verify your email ${email} to start sending money.`);
         }
@@ -50,20 +50,59 @@ const register = async (req, res) => {
 const verifyEmail = async (req, res) => {
     try {
         const { token } = req.query;
-        const user = await User.findOne({
-            where: {
-                verification_token: token,
-                verification_token_expires: { [Op.gt]: new Date() }
-            }
-        });
-        if (!user) return res.status(404).json({ error: 'Invalid or expired token' });
 
+        // 1. Find user by token
+        const user = await User.findOne({ where: { verification_token: token } });
+
+        if (!user) {
+            return res.status(404).json({ status: 'invalid', error: 'Invalid verification link' });
+        }
+
+        // 2. Check if already verified
+        if (user.is_email_verified) {
+            return res.status(200).json({ status: 'already_verified', message: 'Account already verified!' });
+        }
+
+        // 3. Check expiry
+        if (user.verification_token_expires < new Date()) {
+            return res.status(400).json({ status: 'expired', error: 'Verification link has expired' });
+        }
+
+        // 4. Success - Mark as verified
         user.is_email_verified = true;
-        user.verification_token = null;
-        user.verification_token_expires = null;
+        // user.verification_token = null; // Keep token to allow "Already Verified" status on re-click
         await user.save();
 
-        res.json({ message: 'Email verified successfully!' });
+        // Send Success Email
+        await sendVerificationSuccessEmail(user.email, user.full_name);
+
+        res.json({ status: 'success', message: 'Email verified successfully!' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+const resendVerification = async (req, res) => {
+    try {
+        const { email } = req.body;
+        const user = await User.findOne({ where: { email } });
+
+        if (!user) {
+            return res.status(404).json({ error: 'No account found with this email' });
+        }
+
+        if (user.is_email_verified) {
+            return res.status(400).json({ error: 'This account is already verified' });
+        }
+
+        const newToken = crypto.randomBytes(32).toString('hex');
+        user.verification_token = newToken;
+        user.verification_token_expires = new Date(Date.now() + 86400000); // 24 hours
+        await user.save();
+
+        await sendVerificationEmail(email, newToken, user.full_name);
+
+        res.json({ message: 'A new verification link has been sent to your email.' });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -227,6 +266,7 @@ module.exports = {
     register,
     login,
     verifyEmail,
+    resendVerification,
     forgotPassword,
     resetPassword,
     getProfile,

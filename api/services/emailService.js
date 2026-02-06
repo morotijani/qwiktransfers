@@ -44,18 +44,35 @@ const sendEmail = async (to, subject, html) => {
     }
 };
 
-const sendVerificationEmail = async (email, token) => {
-    const url = `${APP_URL}/verify-email?token=${token}`;
+const sendVerificationEmail = async (email, token, name) => {
+    const url = `${APP_URL}/verify-email?token=${token}&email=${email}`;
     await sendEmail(
         email,
         'Verify your account',
         `
-            <h2>Welcome to Qwiktransfers!</h2>
-            <p>Please verify your email address to activate your account and start sending money securely.</p>
+            <h2>Welcome, ${name || 'User'}!</h2>
+            <p>Welcome to Qwiktransfers! Please verify your email address to activate your account and start sending money securely.</p>
             <div style="text-align: center; margin: 40px 0;">
                 <a href="${url}" style="background-color: ${DEEP_BROWN}; color: ${PEACH}; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Verify Email Address</a>
             </div>
             <p>If the button doesn't work, copy and paste this link: <br> <a href="${url}">${url}</a></p>
+            <p><strong>Note:</strong> This link will expire in 24 hours.</p>
+        `
+    );
+};
+
+const sendVerificationSuccessEmail = async (email, name) => {
+    await sendEmail(
+        email,
+        'Account Verified Successfully!',
+        `
+            <h2>Congratulations, ${name || 'User'}!</h2>
+            <p>Your email address has been successfully verified. Your Qwiktransfers account is now fully active.</p>
+            <p>You can now start sending money securely across borders with the best rates.</p>
+            <div style="text-align: center; margin: 40px 0;">
+                <a href="${APP_URL}/login" style="background-color: ${DEEP_BROWN}; color: ${PEACH}; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Login to Dashboard</a>
+            </div>
+            <p>Thank you for choosing Qwiktransfers!</p>
         `
     );
 };
@@ -76,4 +93,4 @@ const sendResetPasswordEmail = async (email, token) => {
     );
 };
 
-module.exports = { sendVerificationEmail, sendResetPasswordEmail, sendEmail };
+module.exports = { sendVerificationEmail, sendVerificationSuccessEmail, sendResetPasswordEmail, sendEmail };
