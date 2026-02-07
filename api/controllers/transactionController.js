@@ -84,16 +84,39 @@ const createTransaction = async (req, res) => {
 
 const getTransactions = async (req, res) => {
     try {
+        const { page = 1, limit = 10, search = '' } = req.query;
+        const offset = (page - 1) * limit;
+
         const where = {};
         if (req.user.role !== 'admin') {
             where.userId = req.user.id;
         }
-        const transactions = await Transaction.findAll({
+
+        if (search) {
+            const { Op } = require('sequelize');
+            where[Op.or] = [
+                { id: { [Op.like]: `%${search}%` } },
+                { amount_sent: { [Op.like]: `%${search}%` } },
+                { '$user.full_name$': { [Op.like]: `%${search}%` } },
+                { recipient_details: { [Op.contains]: { name: search } } } // Specific for JSONB
+            ];
+        }
+
+        const { count, rows: transactions } = await Transaction.findAndCountAll({
             where,
-            include: ['user'],
-            order: [['createdAt', 'DESC']]
+            include: [{ model: User, as: 'user' }],
+            order: [['createdAt', 'DESC']],
+            limit: parseInt(limit),
+            offset: parseInt(offset),
+            distinct: true
         });
-        res.json(transactions);
+
+        res.json({
+            transactions,
+            total: count,
+            pages: Math.ceil(count / limit),
+            currentPage: parseInt(page)
+        });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -128,6 +151,7 @@ const uploadProof = async (req, res) => {
         if (!transaction) return res.status(404).json({ error: 'Transaction not found' });
 
         transaction.proof_url = `/uploads/${req.file.filename}`;
+        transaction.proof_uploaded_at = new Date();
         await transaction.save();
 
         // Notify user
@@ -135,10 +159,75 @@ const uploadProof = async (req, res) => {
             await sendSMS(transaction.user.phone, `Proof of payment uploaded for transaction #${transaction.id}. We will verify it shortly.`);
         }
 
-        res.json({ message: 'Proof uploaded successfully', proof_url: transaction.proof_url });
+        res.json({ message: 'Proof uploaded successfully', proof_url: transaction.proof_url, proof_uploaded_at: transaction.proof_uploaded_at });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 };
 
-module.exports = { createTransaction, getTransactions, updateStatus, uploadProof };
+const cancelTransaction = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const transaction = await Transaction.findByPk(id);
+
+        if (!transaction) return res.status(404).json({ error: 'Transaction not found' });
+        if (transaction.userId !== req.user.id && req.user.role !== 'admin') {
+            return res.status(403).json({ error: 'Unauthorized' });
+        }
+
+        if (transaction.status !== 'pending') {
+            return res.status(400).json({ error: `Cannot cancel a transaction that is already ${transaction.status}` });
+        }
+
+        if (transaction.proof_url) {
+            return res.status(400).json({ error: 'Cannot cancel transaction after proof has been uploaded' });
+        }
+
+        transaction.status = 'cancelled';
+        await transaction.save();
+
+        res.json({ message: 'Transaction cancelled successfully', transaction });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+}
+
+const exportTransactions = async (req, res) => {
+    try {
+        const { startDate, endDate } = req.query;
+        const where = {};
+
+        if (req.user.role !== 'admin') {
+            where.userId = req.user.id;
+        }
+
+        if (startDate && endDate) {
+            const { Op } = require('sequelize');
+            where.createdAt = {
+                [Op.between]: [new Date(startDate), new Date(endDate)]
+            };
+        }
+
+        const transactions = await Transaction.findAll({
+            where,
+            include: ['user'],
+            order: [['createdAt', 'DESC']]
+        });
+
+        // Simple CSV generation
+        let csv = 'ID,Date,User,Type,Amount Sent,Exchange Rate,Amount Received,Recipient,Status,Proof Uploaded At\n';
+        transactions.forEach(tx => {
+            const recipientName = tx.recipient_details?.name || 'N/A';
+            const userName = tx.user?.full_name || tx.user?.email || 'N/A';
+            csv += `${tx.id},${tx.createdAt},"${userName}",${tx.type},${tx.amount_sent},${tx.exchange_rate},${tx.amount_received},"${recipientName}",${tx.status},${tx.proof_uploaded_at || ''}\n`;
+        });
+
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename=transactions-${new Date().getTime()}.csv`);
+        res.status(200).send(csv);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+module.exports = { createTransaction, getTransactions, updateStatus, uploadProof, cancelTransaction, exportTransactions };

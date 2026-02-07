@@ -9,15 +9,22 @@ const AdminDashboard = () => {
     const [users, setUsers] = useState([]);
     const [tab, setTab] = useState('transactions');
 
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalTransactions, setTotalTransactions] = useState(0);
+    const [search, setSearch] = useState('');
+
     useEffect(() => {
         fetchTransactions();
         fetchUsers();
-    }, []);
+    }, [page, search]);
 
     const fetchTransactions = async () => {
         try {
-            const res = await api.get('/transactions');
-            setTransactions(res.data);
+            const res = await api.get(`/transactions?page=${page}&limit=10&search=${search}`);
+            setTransactions(res.data.transactions);
+            setTotalPages(res.data.pages);
+            setTotalTransactions(res.data.total);
         } catch (error) {
             console.error(error);
         }
@@ -90,10 +97,27 @@ const AdminDashboard = () => {
 
             <main>
                 <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
-                    <div style={{ padding: '32px', borderBottom: '1px solid var(--border-color)' }}>
-                        <h2 style={{ fontSize: '1.1rem' }}>
+                    <div style={{ padding: '32px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <h2 style={{ fontSize: '1.1rem', margin: 0 }}>
                             {tab === 'transactions' ? 'Global Transaction Pool' : 'Identity Verification Requests'}
                         </h2>
+                        {tab === 'transactions' && (
+                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                <div style={{ position: 'relative' }}>
+                                    <input
+                                        type="text"
+                                        placeholder="Search..."
+                                        value={search}
+                                        onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                                        style={{ padding: '6px 10px 6px 28px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '0.8rem' }}
+                                    />
+                                    <span style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', opacity: 0.4, fontSize: '0.8rem' }}>🔍</span>
+                                </div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                                    {totalTransactions} total
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {tab === 'transactions' && (
@@ -121,7 +145,20 @@ const AdminDashboard = () => {
                                         <td><span className={`badge badge-${tx.status}`}>{tx.status}</span></td>
                                         <td>
                                             {tx.proof_url ? (
-                                                <a href={`http://localhost:5000${tx.proof_url}`} target="_blank" rel="noreferrer" style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 700 }}>View</a>
+                                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                    <a href={`http://localhost:5000${tx.proof_url}`} target="_blank" rel="noreferrer" style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 700 }}>View Proof</a>
+                                                    {tx.proof_uploaded_at && (
+                                                        <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                                                            {new Date(tx.proof_uploaded_at).toLocaleString('en-US', {
+                                                                month: 'short',
+                                                                day: 'numeric',
+                                                                hour: 'numeric',
+                                                                minute: 'numeric',
+                                                                hour12: true
+                                                            })}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             ) : (
                                                 <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>None</span>
                                             )}

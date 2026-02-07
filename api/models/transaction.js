@@ -22,7 +22,8 @@ module.exports = (sequelize, DataTypes) => {
     amount_received: DataTypes.DECIMAL,
     recipient_details: DataTypes.JSONB,
     status: DataTypes.STRING,
-    proof_url: DataTypes.STRING
+    proof_url: DataTypes.STRING,
+    proof_uploaded_at: DataTypes.DATE
   }, {
     sequelize,
     modelName: 'Transaction',

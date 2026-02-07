@@ -39,9 +39,18 @@ const UserDashboard = () => {
     const [selectedTx, setSelectedTx] = useState(null);
     const [showDetailsModal, setShowDetailsModal] = useState(false);
 
-    // Proof Preview Modal States
     const [previewImage, setPreviewImage] = useState(null);
     const [showPreviewModal, setShowPreviewModal] = useState(false);
+
+    // Pagination & Search States
+    const [search, setSearch] = useState('');
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalTransactions, setTotalTransactions] = useState(0);
+
+    // Export States
+    const [showExportModal, setShowExportModal] = useState(false);
+    const [exportDates, setExportDates] = useState({ start: '', end: '' });
 
     const isValidEmail = (email) => {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -60,7 +69,7 @@ const UserDashboard = () => {
     useEffect(() => {
         fetchTransactions();
         fetchRate();
-    }, []);
+    }, [page, search]);
 
     // Reset recipient details when destination currency changes
     useEffect(() => {
@@ -83,12 +92,50 @@ const UserDashboard = () => {
     const fetchTransactions = async () => {
         setIsHistoryLoading(true);
         try {
-            const res = await api.get('/transactions');
-            setTransactions(res.data);
+            const res = await api.get(`/transactions?page=${page}&limit=10&search=${search}`);
+            setTransactions(res.data.transactions);
+            setTotalPages(res.data.pages);
+            setTotalTransactions(res.data.total);
         } catch (error) {
             console.error(error);
+            toast.error('Failed to load transaction history');
         } finally {
             setIsHistoryLoading(false);
+        }
+    };
+
+    const handleCancelTransaction = async (id) => {
+        if (!window.confirm('Are you sure you want to cancel this transaction?')) return;
+
+        try {
+            await api.patch(`/transactions/${id}/cancel`);
+            toast.success('Transaction cancelled successfully');
+            fetchTransactions();
+            setShowDetailsModal(false);
+        } catch (error) {
+            toast.error(error.response?.data?.error || 'Failed to cancel transaction');
+        }
+    };
+
+    const handleExport = async () => {
+        try {
+            const url = exportDates.start && exportDates.end
+                ? `/transactions/export?startDate=${exportDates.start}&endDate=${exportDates.end}`
+                : '/transactions/export';
+
+            const response = await api.get(url, { responseType: 'blob' });
+            const blob = new Blob([response.data], { type: 'text/csv' });
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.setAttribute('download', `transactions-${new Date().getTime()}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            setShowExportModal(false);
+            toast.success('Export started!');
+        } catch (error) {
+            toast.error('Failed to export transactions');
         }
     };
 
@@ -621,8 +668,27 @@ const UserDashboard = () => {
                 </aside>
 
                 <section className="card" style={{ padding: '0', overflow: 'hidden', minHeight: '400px' }}>
-                    <div style={{ padding: '32px' }}>
-                        <h2 style={{ fontSize: '1.1rem' }}>Transaction History</h2>
+                    <div style={{ padding: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <h2 style={{ fontSize: '1.1rem', margin: 0 }}>Transaction History</h2>
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                            <div style={{ position: 'relative' }}>
+                                <input
+                                    type="text"
+                                    placeholder="Search..."
+                                    value={search}
+                                    onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                                    style={{ padding: '8px 12px 8px 32px', borderRadius: '8px', border: '1px solid #eee', fontSize: '0.85rem' }}
+                                />
+                                <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', opacity: 0.4 }}>🔍</span>
+                            </div>
+                            <button
+                                onClick={() => setShowExportModal(true)}
+                                className="btn-outline"
+                                style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+                            >
+                                ⬇ Export CSV
+                            </button>
+                        </div>
                     </div>
                     {isHistoryLoading ? (
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '100px 0' }}>
@@ -687,6 +753,32 @@ const UserDashboard = () => {
                                 ))}
                             </tbody>
                         </table>
+                    )}
+
+                    {!isHistoryLoading && totalPages > 1 && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '32px', padding: '16px 0', borderTop: '1px solid #f0f0f0' }}>
+                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                                Showing page {page} of {totalPages} ({totalTransactions} transactions)
+                            </div>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                                <button
+                                    disabled={page === 1}
+                                    onClick={() => setPage(page - 1)}
+                                    className="btn-outline"
+                                    style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+                                >
+                                    Previous
+                                </button>
+                                <button
+                                    disabled={page === totalPages}
+                                    onClick={() => setPage(page + 1)}
+                                    className="btn-outline"
+                                    style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        </div>
                     )}
                 </section>
             </main>
@@ -791,8 +883,17 @@ const UserDashboard = () => {
                                 </div>
                             </div>
 
-                            <div style={{ marginTop: '32px' }}>
-                                <button onClick={() => setShowDetailsModal(false)} className="btn-primary">Close</button>
+                            <div style={{ marginTop: '32px', display: 'flex', gap: '12px' }}>
+                                <button onClick={() => setShowDetailsModal(false)} className="btn-primary" style={{ background: '#f0f0f0', border: 'none', color: 'var(--text-deep-brown)' }}>Close</button>
+                                {selectedTx.status === 'pending' && !selectedTx.proof_url && (
+                                    <button
+                                        onClick={() => handleCancelTransaction(selectedTx.id)}
+                                        className="btn-primary"
+                                        style={{ background: '#fee2e2', color: '#dc2626', border: 'none' }}
+                                    >
+                                        Cancel Transaction
+                                    </button>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -812,6 +913,37 @@ const UserDashboard = () => {
                             alt="Payment Proof"
                             style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '12px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}
                         />
+                    </div>
+                </div>
+            )}
+
+            {showExportModal && (
+                <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+                    <div className="card" style={{ maxWidth: '400px', width: '90%' }}>
+                        <h3 style={{ marginBottom: '8px' }}>Export Transactions</h3>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '24px' }}>Download your transaction history as a CSV file.</p>
+
+                        <div className="form-group">
+                            <label>Start Date (Optional)</label>
+                            <input
+                                type="date"
+                                value={exportDates.start}
+                                onChange={(e) => setExportDates({ ...exportDates, start: e.target.value })}
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label>End Date (Optional)</label>
+                            <input
+                                type="date"
+                                value={exportDates.end}
+                                onChange={(e) => setExportDates({ ...exportDates, end: e.target.value })}
+                            />
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
+                            <button onClick={() => setShowExportModal(false)} className="btn-outline" style={{ flex: 1 }}>Cancel</button>
+                            <button onClick={handleExport} className="btn-primary" style={{ flex: 1 }}>Download CSV</button>
+                        </div>
                     </div>
                 </div>
             )}
