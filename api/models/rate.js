@@ -15,7 +15,16 @@ module.exports = (sequelize, DataTypes) => {
   }
   Rate.init({
     pair: DataTypes.STRING,
-    rate: DataTypes.DECIMAL
+    rate: DataTypes.DECIMAL,
+    use_api: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true
+    },
+    manual_rate: DataTypes.DECIMAL,
+    spread: {
+      type: DataTypes.DECIMAL,
+      defaultValue: 5.0
+    }
   }, {
     sequelize,
     modelName: 'Rate',
