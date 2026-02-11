@@ -35,6 +35,11 @@ const AdminDashboard = () => {
     const [showAddVendorModal, setShowAddVendorModal] = useState(false);
     const [newVendor, setNewVendor] = useState({ email: '', full_name: '', phone: '', password: '' });
 
+    // Preview Modal States
+    const [previewImage, setPreviewImage] = useState('');
+    const [previewDate, setPreviewDate] = useState(null);
+    const [showPreviewModal, setShowPreviewModal] = useState(false);
+
     useEffect(() => {
         fetchStats();
         if (tab === 'transactions') {
@@ -266,7 +271,17 @@ const AdminDashboard = () => {
                                                     <td>
                                                         {tx.proof_url ? (
                                                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                                                <a href={`http://localhost:5000${tx.proof_url}`} target="_blank" rel="noreferrer" style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 700 }}>View Proof</a>
+                                                                <span
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setPreviewImage(`http://localhost:5000${tx.proof_url}`);
+                                                                        setPreviewDate(tx.proof_uploaded_at || tx.updatedAt);
+                                                                        setShowPreviewModal(true);
+                                                                    }}
+                                                                    style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 700, cursor: 'pointer' }}
+                                                                >
+                                                                    View Proof
+                                                                </span>
                                                             </div>
                                                         ) : (
                                                             <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>None</span>
@@ -316,10 +331,30 @@ const AdminDashboard = () => {
                                                     <td>
                                                         <div style={{ display: 'flex', gap: '12px' }}>
                                                             {u.kyc_front_url && (
-                                                                <a href={`http://localhost:5000${u.kyc_front_url}`} target="_blank" rel="noreferrer" style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 700 }}>Front</a>
+                                                                <span
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setPreviewImage(`http://localhost:5000${u.kyc_front_url}`);
+                                                                        setPreviewDate(u.updatedAt);
+                                                                        setShowPreviewModal(true);
+                                                                    }}
+                                                                    style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 700, cursor: 'pointer' }}
+                                                                >
+                                                                    Front
+                                                                </span>
                                                             )}
                                                             {u.kyc_back_url && (
-                                                                <a href={`http://localhost:5000${u.kyc_back_url}`} target="_blank" rel="noreferrer" style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 700 }}>Back</a>
+                                                                <span
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setPreviewImage(`http://localhost:5000${u.kyc_back_url}`);
+                                                                        setPreviewDate(u.updatedAt);
+                                                                        setShowPreviewModal(true);
+                                                                    }}
+                                                                    style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 700, cursor: 'pointer' }}
+                                                                >
+                                                                    Back
+                                                                </span>
                                                             )}
                                                             {!u.kyc_front_url && <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>None</span>}
                                                         </div>
@@ -714,6 +749,40 @@ const AdminDashboard = () => {
                                     </button>
                                 </div>
                             </form>
+                        </div>
+                    </div>
+                )}
+
+                {showPreviewModal && (
+                    <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, backdropFilter: 'blur(10px)' }}>
+                        <div style={{ position: 'relative', maxWidth: '90%', maxHeight: '90%' }} className="fade-in">
+                            <button
+                                onClick={() => setShowPreviewModal(false)}
+                                style={{ position: 'absolute', top: '-40px', right: '-40px', background: 'white', border: 'none', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer', fontWeight: 800, fontSize: '1.2rem' }}
+                            >
+                                &times;
+                            </button>
+                            {previewImage.endsWith('.pdf') ? (
+                                <iframe src={previewImage} style={{ width: '80vw', height: '80vh', border: 'none', borderRadius: '12px' }} title="Proof PDF"></iframe>
+                            ) : (
+                                <img
+                                    src={previewImage}
+                                    alt="Preview"
+                                    style={{ width: '100%', maxHeight: '80vh', objectFit: 'contain', borderRadius: '12px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}
+                                />
+                            )}
+                            {previewDate && (
+                                <div style={{ position: 'absolute', bottom: '-40px', left: 0, width: '100%', textAlign: 'center', color: 'white', fontWeight: 600 }}>
+                                    Uploaded on: {new Date(previewDate).toLocaleString('en-US', {
+                                        month: 'long',
+                                        day: 'numeric',
+                                        year: 'numeric',
+                                        hour: 'numeric',
+                                        minute: 'numeric',
+                                        hour12: true
+                                    })}
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}

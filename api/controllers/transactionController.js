@@ -28,7 +28,8 @@ const createTransaction = async (req, res) => {
         // Simple conversion for limit check: 1 CAD/USD ≈ 15 GHS
         const getReferenceAmount = (amount, t) => {
             const currency = t.split('-')[0];
-            return currency === 'GHS' ? amount / 15 : amount;
+            const numAmount = parseFloat(amount) || 0;
+            return currency === 'GHS' ? numAmount / 15 : numAmount;
         };
 
         const currentSpent = todayTransactions.reduce((sum, tx) => sum + getReferenceAmount(tx.amount_sent, tx.type), 0);
