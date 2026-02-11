@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { register, login, verifyEmail, resendVerification, forgotPassword, resetPassword, getProfile, getAllUsers, updateKYCStatus, submitKYC, updateProfile, changePassword, setPin, verifyPin } = require('../controllers/authController');
+const { register, login, verifyEmail, resendVerification, forgotPassword, resetPassword, getProfile, getAllUsers, updateKYCStatus, submitKYC, updateProfile, changePassword, setPin, verifyPin, updateUserRole, createVendor, toggleUserStatus } = require('../controllers/authController');
 const { verifyToken, verifyAdmin } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
 
@@ -17,6 +17,9 @@ router.post('/set-pin', verifyToken, setPin);
 router.post('/verify-pin', verifyToken, verifyPin);
 router.get('/users', verifyAdmin, getAllUsers);
 router.patch('/kyc/status', verifyAdmin, updateKYCStatus);
+router.patch('/update-role', verifyAdmin, updateUserRole);
+router.post('/create-vendor', verifyAdmin, createVendor);
+router.patch('/toggle-status', verifyAdmin, toggleUserStatus);
 
 router.post('/avatar', verifyToken, upload.single('avatar'), async (req, res) => {
     try {

@@ -11,6 +11,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import UserDashboard from './pages/UserDashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import VendorDashboard from './pages/VendorDashboard';
 import Profile from './pages/Profile';
 import KycVerification from './pages/KycVerification';
 
@@ -42,6 +43,15 @@ function App() {
             element={
               <PrivateRoute role="admin">
                 <AdminDashboard />
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="/vendor"
+            element={
+              <PrivateRoute role="vendor">
+                <VendorDashboard />
               </PrivateRoute>
             }
           />

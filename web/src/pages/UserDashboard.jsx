@@ -1,11 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 
 const UserDashboard = () => {
     const { user, logout, refreshProfile } = useAuth();
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        if (user && user.role === 'admin') {
+            navigate('/admin');
+        }
+    }, [user, navigate]);
+
     const [transactions, setTransactions] = useState([]);
     const [amount, setAmount] = useState('');
     const [recipientType, setRecipientType] = useState('momo');
@@ -51,6 +59,28 @@ const UserDashboard = () => {
     // Export States
     const [showExportModal, setShowExportModal] = useState(false);
     const [exportDates, setExportDates] = useState({ start: '', end: '' });
+
+    // Payment Methods State
+    const [ghsPaymentMethod, setGhsPaymentMethod] = useState(null);
+    const [cadPaymentMethod, setCadPaymentMethod] = useState(null);
+
+    useEffect(() => {
+        fetchPaymentMethods();
+    }, []);
+
+    const fetchPaymentMethods = async () => {
+        try {
+            const res = await api.get('/system/payment-methods');
+            const methods = res.data;
+            const ghs = methods.find(m => m.type === 'momo-ghs');
+            const cad = methods.find(m => m.type === 'interac-cad');
+
+            if (ghs) setGhsPaymentMethod(typeof ghs.details === 'string' ? JSON.parse(ghs.details) : ghs.details);
+            if (cad) setCadPaymentMethod(typeof cad.details === 'string' ? JSON.parse(cad.details) : cad.details);
+        } catch (error) {
+            console.error('Failed to fetch payment methods');
+        }
+    };
 
     const isValidEmail = (email) => {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -624,13 +654,13 @@ const UserDashboard = () => {
 
                                     {fromCurrency === 'GHS' ? (
                                         <div style={{ fontSize: '0.9rem', marginBottom: '16px' }}>
-                                            <div style={{ marginBottom: '4px' }}><strong>MTN Momo:</strong> 055 123 4567</div>
-                                            <div><strong>Name:</strong> Qwiktransfers Limited</div>
+                                            <div style={{ marginBottom: '4px' }}><strong>MTN Momo:</strong> {ghsPaymentMethod?.number || '055 123 4567'}</div>
+                                            <div><strong>Name:</strong> {ghsPaymentMethod?.name || 'Qwiktransfers Limited'}</div>
                                         </div>
                                     ) : (
                                         <div style={{ fontSize: '0.9rem', marginBottom: '16px' }}>
-                                            <div style={{ marginBottom: '4px' }}><strong>Interac e-Transfer:</strong> pay@qwiktransfers.ca</div>
-                                            <div><strong>Name:</strong> Qwiktransfers Canada</div>
+                                            <div style={{ marginBottom: '4px' }}><strong>Interac e-Transfer:</strong> {cadPaymentMethod?.email || 'pay@qwiktransfers.ca'}</div>
+                                            <div><strong>Name:</strong> {cadPaymentMethod?.name || 'Qwiktransfers Canada'}</div>
                                         </div>
                                     )}
 

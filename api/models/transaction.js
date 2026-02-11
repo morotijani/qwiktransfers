@@ -12,6 +12,7 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       // define association here
       Transaction.belongsTo(models.User, { foreignKey: 'userId', as: 'user' });
+      Transaction.belongsTo(models.User, { foreignKey: 'vendorId', as: 'vendor' });
     }
   }
   Transaction.init({
@@ -23,7 +24,8 @@ module.exports = (sequelize, DataTypes) => {
     recipient_details: DataTypes.JSONB,
     status: DataTypes.STRING,
     proof_url: DataTypes.STRING,
-    proof_uploaded_at: DataTypes.DATE
+    proof_uploaded_at: DataTypes.DATE,
+    vendorId: DataTypes.INTEGER
   }, {
     sequelize,
     modelName: 'Transaction',

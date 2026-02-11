@@ -92,6 +92,11 @@ const getTransactions = async (req, res) => {
             where.userId = req.user.id;
         }
 
+        const { status } = req.query;
+        if (status && status !== 'all') {
+            where.status = status;
+        }
+
         if (search) {
             const { Op } = require('sequelize');
             const sequelize = Transaction.sequelize;
@@ -231,4 +236,27 @@ const exportTransactions = async (req, res) => {
     }
 };
 
-module.exports = { createTransaction, getTransactions, updateStatus, uploadProof, cancelTransaction, exportTransactions };
+const getAdminStats = async (req, res) => {
+    try {
+        const { Op } = require('sequelize');
+
+        // Pending Transactions
+        const pendingTransactions = await Transaction.count({ where: { status: 'pending' } });
+
+        // Pending KYC
+        const pendingKYC = await User.count({ where: { kyc_status: 'pending' } });
+
+        // Success Volume (Total Sent to recipients)
+        const successVolume = await Transaction.sum('amount_received', { where: { status: 'sent' } });
+
+        res.json({
+            pendingTransactions,
+            pendingKYC,
+            successVolume: successVolume || 0
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+module.exports = { createTransaction, getTransactions, updateStatus, uploadProof, cancelTransaction, exportTransactions, getAdminStats };

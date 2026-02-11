@@ -123,9 +123,17 @@ const login = async (req, res) => {
     try {
         const { email, password } = req.body;
         const user = await User.findOne({ where: { email } });
+
         if (!user) return res.status(404).json({ error: 'User not found' });
+
+        // Check if account is active
+        if (user.is_active === false) {
+            return res.status(403).json({ error: 'Your account has been disabled. Please contact support.' });
+        }
+
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(401).json({ error: 'Invalid credentials' });
+
         const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET || 'secret', { expiresIn: '1d' });
         res.json({ user, token });
     } catch (error) {
@@ -202,8 +210,44 @@ const getProfile = async (req, res) => {
 
 const getAllUsers = async (req, res) => {
     try {
-        const users = await User.findAll({ attributes: { exclude: ['password'] } });
-        res.json(users);
+        const { page = 1, limit = 10, search = '', kycStatus = '', role = '' } = req.query;
+        const offset = (page - 1) * limit;
+
+        const where = {};
+
+        // If role is explicitly provided, filter by it. Otherwise, exclude admins by default.
+        if (role) {
+            where.role = role;
+        } else {
+            where.role = { [Op.ne]: 'admin' };
+        }
+
+        if (search) {
+            where[Op.or] = [
+                { full_name: { [Op.like]: `%${search}%` } },
+                { email: { [Op.like]: `%${search}%` } },
+                { phone: { [Op.like]: `%${search}%` } }
+            ];
+        }
+
+        if (kycStatus) {
+            where.kyc_status = kycStatus;
+        }
+
+        const { count, rows: users } = await User.findAndCountAll({
+            where,
+            attributes: { exclude: ['password'] },
+            limit: parseInt(limit),
+            offset: parseInt(offset),
+            order: [['createdAt', 'DESC']]
+        });
+
+        res.json({
+            users,
+            total: count,
+            pages: Math.ceil(count / limit),
+            currentPage: parseInt(page)
+        });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -320,6 +364,64 @@ const verifyPin = async (req, res) => {
     }
 };
 
+const updateUserRole = async (req, res) => {
+    try {
+        const { userId, role } = req.body;
+        const user = await User.findByPk(userId);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        user.role = role;
+        await user.save();
+
+        res.json({ message: 'User role updated successfully', role });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+const createVendor = async (req, res) => {
+    try {
+        const { email, password, full_name, phone } = req.body;
+
+        const existingUser = await User.findOne({ where: { [Op.or]: [{ email }, { phone }] } });
+        if (existingUser) {
+            return res.status(400).json({ error: 'Email or phone already registered' });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const vendor = await User.create({
+            email,
+            password: hashedPassword,
+            full_name,
+            phone,
+            role: 'vendor',
+            is_active: true,
+            is_email_verified: true, // Admin-created vendors are pre-verified
+            kyc_status: 'verified' // Admin assumes responsibility for vendor identity
+        });
+
+        res.status(201).json({ message: 'Vendor created successfully', vendor });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+const toggleUserStatus = async (req, res) => {
+    try {
+        const { userId } = req.body;
+        const user = await User.findByPk(userId);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        user.is_active = !user.is_active;
+        await user.save();
+
+        res.json({ message: `User account ${user.is_active ? 'enabled' : 'disabled'}`, is_active: user.is_active });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 module.exports = {
     register,
     login,
@@ -334,5 +436,8 @@ module.exports = {
     updateProfile,
     changePassword,
     setPin,
-    verifyPin
+    verifyPin,
+    updateUserRole,
+    createVendor,
+    toggleUserStatus
 };

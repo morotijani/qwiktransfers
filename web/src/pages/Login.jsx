@@ -22,10 +22,16 @@ const Login = () => {
         setError('');
         setLoading(true);
         try {
-            await login(email, password);
-            navigate('/');
+            const res = await login(email, password);
+            if (res.user.role === 'admin') {
+                navigate('/admin');
+            } else if (res.user.role === 'vendor') {
+                navigate('/vendor');
+            } else {
+                navigate('/');
+            }
         } catch (err) {
-            setError('Invalid email or password');
+            setError(err.response?.data?.error || 'Invalid email or password');
         } finally {
             setLoading(false);
         }

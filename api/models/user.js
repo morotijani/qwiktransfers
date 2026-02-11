@@ -12,6 +12,7 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       // define association here
       User.hasMany(models.Transaction, { foreignKey: 'userId', as: 'transactions' });
+      User.hasMany(models.Transaction, { foreignKey: 'vendorId', as: 'handledTransactions' });
     }
   }
   User.init({
@@ -45,7 +46,15 @@ module.exports = (sequelize, DataTypes) => {
     verification_token: DataTypes.STRING,
     verification_token_expires: DataTypes.DATE,
     reset_password_token: DataTypes.STRING,
-    reset_password_expires: DataTypes.DATE
+    reset_password_expires: DataTypes.DATE,
+    is_online: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false
+    },
+    is_active: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true
+    }
   }, {
     sequelize,
     modelName: 'User',
