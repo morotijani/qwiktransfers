@@ -5,6 +5,8 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { sendVerificationEmail, sendVerificationSuccessEmail, sendResetPasswordEmail } = require('../services/emailService');
 const { sendSMS } = require('../services/smsService');
+const fs = require('fs');
+const path = require('path');
 
 const register = async (req, res) => {
     try {
@@ -276,6 +278,28 @@ const submitKYC = async (req, res) => {
             return res.status(400).json({ error: 'Front of document is required' });
         }
 
+        // Delete old KYC files if they exist
+        if (user.kyc_front_url) {
+            const oldPath = path.join(__dirname, '..', user.kyc_front_url);
+            fs.access(oldPath, fs.constants.F_OK, (err) => {
+                if (!err) {
+                    fs.unlink(oldPath, (unlinkErr) => {
+                        if (unlinkErr) console.error("Error deleting old KYC front:", unlinkErr);
+                    });
+                }
+            });
+        }
+        if (user.kyc_back_url) {
+            const oldPath = path.join(__dirname, '..', user.kyc_back_url);
+            fs.access(oldPath, fs.constants.F_OK, (err) => {
+                if (!err) {
+                    fs.unlink(oldPath, (unlinkErr) => {
+                        if (unlinkErr) console.error("Error deleting old KYC back:", unlinkErr);
+                    });
+                }
+            });
+        }
+
         user.kyc_document_type = documentType;
         user.kyc_document_id = documentId;
         user.kyc_front_url = `/uploads/${req.files['front'][0].filename}`;
@@ -429,6 +453,18 @@ const updateAvatar = async (req, res) => {
         }
         const user = await User.findByPk(req.user.id);
         if (!user) return res.status(404).json({ error: 'User not found' });
+
+        // Delete old profile picture if it exists
+        if (user.profile_picture) {
+            const oldPath = path.join(__dirname, '..', user.profile_picture);
+            fs.access(oldPath, fs.constants.F_OK, (err) => {
+                if (!err) {
+                    fs.unlink(oldPath, (unlinkErr) => {
+                        if (unlinkErr) console.error("Error deleting old avatar:", unlinkErr);
+                    });
+                }
+            });
+        }
 
         user.profile_picture = `/uploads/${req.file.filename}`;
         await user.save();

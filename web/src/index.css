@@ -289,3 +289,12 @@ nav button.active {
   background: var(--border-color);
   border-radius: 10px;
 }
+
+/* Avatar Upload Hover Effects */
+.avatar-upload-container:hover .avatar-overlay {
+  opacity: 1 !important;
+}
+
+.avatar-upload-container:hover {
+  transform: scale(1.05);
+}

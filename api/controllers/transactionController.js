@@ -1,6 +1,8 @@
 const { Transaction, User, Rate } = require('../models');
 const { sendSMS } = require('../services/smsService');
 const { sendTransactionInitiatedEmail } = require('../services/emailService');
+const fs = require('fs');
+const path = require('path');
 
 const createTransaction = async (req, res) => {
     try {
@@ -156,6 +158,18 @@ const uploadProof = async (req, res) => {
         const { id } = req.params;
         const transaction = await Transaction.findByPk(id, { include: ['user'] });
         if (!transaction) return res.status(404).json({ error: 'Transaction not found' });
+
+        // Delete old proof if it exists
+        if (transaction.proof_url) {
+            const oldPath = path.join(__dirname, '..', transaction.proof_url);
+            fs.access(oldPath, fs.constants.F_OK, (err) => {
+                if (!err) {
+                    fs.unlink(oldPath, (unlinkErr) => {
+                        if (unlinkErr) console.error("Error deleting old proof:", unlinkErr);
+                    });
+                }
+            });
+        }
 
         transaction.proof_url = `/uploads/${req.file.filename}`;
         transaction.proof_uploaded_at = new Date();

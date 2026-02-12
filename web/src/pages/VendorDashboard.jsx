@@ -84,7 +84,6 @@ const VendorDashboard = () => {
     };
 
     const acceptTransaction = async (transactionId) => {
-        // If user has a PIN, we must verify it first
         if (user?.transaction_pin) {
             setPendingAction({ type: 'accept', id: transactionId });
             setShowPinModal(true);
@@ -101,7 +100,6 @@ const VendorDashboard = () => {
     };
 
     const completeTransaction = async (transactionId) => {
-        // Always require PIN for completion for security
         if (!user?.transaction_pin) {
             toast.error("Please set a security PIN in Settings before completing transfers.");
             setActiveTab('settings');
@@ -223,7 +221,9 @@ const VendorDashboard = () => {
 
         setLoading(true);
         try {
-            await api.post('/auth/avatar', formData);
+            await api.post('/auth/avatar', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
             toast.success("Profile picture updated");
             refreshProfile();
         } catch (error) {
@@ -235,7 +235,7 @@ const VendorDashboard = () => {
 
     return (
         <div className="dashboard-container">
-            <header style={{ borderBottom: '1px solid var(--border-color)', marginBottom: '32px' }}>
+            <header>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
                     <h1 style={{ fontSize: '1.5rem', fontWeight: 800 }}>QWIK<span style={{ fontWeight: 400, opacity: 0.6 }}>VENDOR</span></h1>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: '#f5f5f5', padding: '6px 16px', borderRadius: '20px' }}>
@@ -251,33 +251,50 @@ const VendorDashboard = () => {
                         </button>
                     </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexShrink: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', flexShrink: 0 }}>
                     <div
                         onClick={() => setActiveTab('settings')}
-                        style={{ textAlign: 'right', cursor: 'pointer', padding: '4px 8px', borderRadius: '8px', transition: 'all 0.2s', minWidth: '150px' }}
+                        style={{ textAlign: 'right', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
                         className="header-profile-toggle"
                     >
-                        <div style={{ fontSize: '0.9rem', fontWeight: 800, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.full_name}</div>
-                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Verified Vendor</div>
+                        {user?.profile_picture && (
+                            <img
+                                src={`http://localhost:5000${user.profile_picture}`}
+                                alt="Avatar"
+                                style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid var(--accent-peach)', objectFit: 'cover' }}
+                            />
+                        )}
+                        <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{user?.full_name}</div>
+                            <div style={{
+                                fontSize: '0.7rem',
+                                fontWeight: 700,
+                                color: 'var(--success)',
+                                textTransform: 'uppercase'
+                            }}>
+                                Verified Vendor
+                            </div>
+                        </div>
                     </div>
                     <button
                         onClick={logout}
                         className="btn-outline"
                         style={{
-                            padding: '8px 20px',
+                            padding: '8px 16px',
                             fontSize: '0.85rem',
-                            fontWeight: 700,
-                            border: '1.5px solid var(--text-deep-brown)',
-                            borderRadius: '10px',
+                            fontWeight: 600,
+                            border: '1px solid var(--border-color)',
+                            borderRadius: '6px',
                             background: 'transparent',
                             color: 'var(--text-deep-brown)',
-                            transition: 'all 0.3s ease'
+                            width: 'auto',
+                            cursor: 'pointer'
                         }}
                     >
                         Sign Out
                     </button>
                 </div>
-            </header >
+            </header>
 
             <main>
                 <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
@@ -329,7 +346,7 @@ const VendorDashboard = () => {
                             <tbody>
                                 {pool.length === 0 ? (
                                     <tr>
-                                        <td colSpan="4" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>No pending transactions in the pool. Waiting for customers...</td>
+                                        <td colSpan="5" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>No pending transactions in the pool. Waiting for customers...</td>
                                     </tr>
                                 ) : (
                                     pool.map(tx => (
@@ -439,143 +456,140 @@ const VendorDashboard = () => {
                 )}
 
                 {isOnline && activeTab === 'settings' && (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
-                        <div className="card">
-                            <h3 style={{ marginBottom: '20px' }}>Personal Profile</h3>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '24px' }}>
+                    <div style={{ maxWidth: '800px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                        <div style={{ marginBottom: '8px' }}>
+                            <h2 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: '4px' }}>Profile Settings</h2>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Manage your vendor account details and security.</p>
+                        </div>
+
+                        {/* Avatar Section */}
+                        <section className="card" style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
+                            <div style={{ position: 'relative', cursor: 'pointer', transition: 'transform 0.2s ease' }} className="avatar-upload-container">
                                 <img
-                                    src={user?.profile_picture ? `http://localhost:5000${user.profile_picture}` : 'https://ui-avatars.com/api/?name=' + user?.full_name}
+                                    src={user?.profile_picture ? `http://localhost:5000${user.profile_picture}` : 'https://ui-avatars.com/api/?name=' + user?.full_name + '&background=random'}
                                     alt="Profile"
-                                    style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover', border: '3px solid var(--accent-peach)' }}
+                                    style={{ width: '100px', height: '100px', borderRadius: '50%', objectFit: 'cover', border: '4px solid #fff', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                                 />
-                                <div>
-                                    <input
-                                        type="file"
-                                        id="avatar-upload"
-                                        hidden
-                                        onChange={handleAvatarUpload}
-                                        accept="image/*"
-                                    />
-                                    <label htmlFor="avatar-upload" className="btn-outline" style={{ padding: '8px 16px', fontSize: '0.8rem', cursor: 'pointer' }}>
-                                        Change Picture
-                                    </label>
+                                <input
+                                    type="file"
+                                    onChange={handleAvatarUpload}
+                                    accept="image/*"
+                                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', zIndex: 10 }}
+                                />
+                                <div className="avatar-overlay" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', borderRadius: '50%', background: 'rgba(0,0,0,0.4)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0, transition: 'opacity 0.2s ease', fontSize: '0.7rem', fontWeight: 700, pointerEvents: 'none' }}>
+                                    CHANGE
                                 </div>
                             </div>
-
-                            <div style={{ background: '#f9f9f9', padding: '16px', borderRadius: '12px', marginBottom: '24px' }}>
-                                <div style={{ marginBottom: '12px', borderBottom: '1px solid #eee', paddingBottom: '8px' }}>
-                                    <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>Account Email</label>
-                                    <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{user?.email}</div>
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                                    <div>
-                                        <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>Joined</label>
-                                        <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{new Date(user?.createdAt).toLocaleDateString()}</div>
-                                    </div>
-                                    <div>
-                                        <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>Status</label>
-                                        <div style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--success)' }}>Active Now</div>
-                                    </div>
-                                </div>
+                            <div>
+                                <h3 style={{ fontSize: '1.1rem', marginBottom: '4px' }}>Profile Picture</h3>
+                                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0' }}>Click the image to upload a new one.</p>
                             </div>
+                        </section>
 
+                        {/* Personal Info Card */}
+                        <section className="card">
+                            <h3 style={{ fontSize: '1.1rem', marginBottom: '24px' }}>Personal Information</h3>
                             <form onSubmit={handleUpdateProfile}>
-                                <div style={{ marginBottom: '16px' }}>
-                                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '6px' }}>Full Name</label>
+                                <div className="form-group">
+                                    <label>Email Address (Immutable)</label>
+                                    <input type="text" value={user?.email || ''} readOnly style={{ background: '#f9f9f9', cursor: 'not-allowed' }} placeholder="Email" />
+                                </div>
+                                <div className="form-group">
+                                    <label>Full Name</label>
                                     <input
                                         type="text"
-                                        className="form-control"
                                         value={profileData.full_name}
                                         onChange={(e) => setProfileData({ ...profileData, full_name: e.target.value })}
+                                        placeholder="Full Name"
                                         required
                                     />
                                 </div>
-                                <div style={{ marginBottom: '16px' }}>
-                                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '6px' }}>Phone Number</label>
+                                <div className="form-group" style={{ marginBottom: '32px' }}>
+                                    <label>Phone Number</label>
                                     <input
                                         type="tel"
-                                        className="form-control"
                                         value={profileData.phone}
                                         onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
+                                        placeholder="+233..."
                                         required
                                     />
                                 </div>
-                                <button type="submit" className="btn-primary" disabled={loading} style={{ width: '100%' }}>Update Profile</button>
+                                <button type="submit" className="btn-primary" disabled={loading} style={{ width: 'auto', padding: '12px 32px' }}>
+                                    {loading ? 'Saving...' : 'Update Profile'}
+                                </button>
                             </form>
-                        </div>
+                        </section>
 
-                        <div className="card">
-                            <h3 style={{ marginBottom: '20px' }}>Security Settings</h3>
-                            <div style={{ marginBottom: '32px' }}>
-                                <h4 style={{ fontSize: '0.9rem', marginBottom: '12px', borderBottom: '1px solid #f0f0f0', paddingBottom: '8px' }}>Security PIN ({user?.transaction_pin ? 'Enabled' : 'Not Set'})</h4>
-                                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '16px' }}>Required for processing and completing any transaction.</p>
-                                <form onSubmit={handleSetPin}>
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
-                                        <input
-                                            type="password"
-                                            maxLength="4"
-                                            placeholder="4-digit PIN"
-                                            className="form-control"
-                                            value={newPin.pin}
-                                            onChange={(e) => setNewPin({ ...newPin, pin: e.target.value.replace(/\D/g, '') })}
-                                            required
-                                        />
-                                        <input
-                                            type="password"
-                                            maxLength="4"
-                                            placeholder="Confirm PIN"
-                                            className="form-control"
-                                            value={newPin.confirm}
-                                            onChange={(e) => setNewPin({ ...newPin, confirm: e.target.value.replace(/\D/g, '') })}
-                                            required
-                                        />
+                        {/* Transaction PIN Card */}
+                        <section className="card">
+                            <h3 style={{ fontSize: '1.1rem', marginBottom: '24px' }}>Transaction PIN</h3>
+                            <form onSubmit={handleSetPin}>
+                                <div className="form-group" style={{ marginBottom: '32px' }}>
+                                    <label>Set Security PIN</label>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '400px' }}>
+                                        <div className="form-group" style={{ marginBottom: 0 }}>
+                                            <label style={{ fontSize: '0.7rem', opacity: 0.7 }}>New 4-Digit PIN</label>
+                                            <input
+                                                type="password"
+                                                maxLength="4"
+                                                placeholder="Enter New PIN"
+                                                value={newPin.pin}
+                                                onChange={(e) => setNewPin({ ...newPin, pin: e.target.value.replace(/\D/g, '') })}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="form-group" style={{ marginBottom: 0 }}>
+                                            <label style={{ fontSize: '0.7rem', opacity: 0.7 }}>Confirm PIN</label>
+                                            <input
+                                                type="password"
+                                                maxLength="4"
+                                                placeholder="Confirm New PIN"
+                                                value={newPin.confirm}
+                                                onChange={(e) => setNewPin({ ...newPin, confirm: e.target.value.replace(/\D/g, '') })}
+                                                required
+                                            />
+                                        </div>
                                     </div>
-                                    <button type="submit" className="btn-outline" disabled={loading} style={{ border: '1px solid var(--text-deep-brown)', width: '100%' }}>
-                                        {loading ? 'Updating PIN...' : 'Update PIN'}
-                                    </button>
-                                </form>
-                            </div>
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '8px' }}>
+                                        This PIN is required for every claim and completion action.
+                                    </p>
+                                </div>
+                                <button type="submit" className="btn-primary" disabled={loading} style={{ width: 'auto', padding: '12px 32px' }}>
+                                    {loading ? 'Updating...' : 'Set Transaction PIN'}
+                                </button>
+                            </form>
+                        </section>
 
-                            <div>
-                                <h4 style={{ fontSize: '0.9rem', marginBottom: '12px', borderBottom: '1px solid #f0f0f0', paddingBottom: '8px' }}>Update Password</h4>
-                                <form onSubmit={handleChangePassword}>
-                                    <div style={{ marginBottom: '12px' }}>
-                                        <input
-                                            type="password"
-                                            placeholder="Current Password"
-                                            className="form-control"
-                                            value={passwords.current}
-                                            onChange={(e) => setPasswords({ ...passwords, current: e.target.value })}
-                                            required
-                                        />
-                                    </div>
-                                    <div style={{ marginBottom: '12px' }}>
-                                        <input
-                                            type="password"
-                                            placeholder="New Password"
-                                            className="form-control"
-                                            value={passwords.new}
-                                            onChange={(e) => setPasswords({ ...passwords, new: e.target.value })}
-                                            required
-                                        />
-                                    </div>
-                                    <div style={{ marginBottom: '12px' }}>
-                                        <input
-                                            type="password"
-                                            placeholder="Confirm New Password"
-                                            className="form-control"
-                                            value={passwords.confirm}
-                                            onChange={(e) => setPasswords({ ...passwords, confirm: e.target.value })}
-                                            required
-                                        />
-                                    </div>
-                                    <button type="submit" className="btn-outline" disabled={loading} style={{ border: '1px solid var(--text-deep-brown)', width: '100%' }}>
-                                        {loading ? 'Changing...' : 'Change Password'}
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    </div >
+                        {/* Change Password Card */}
+                        <section className="card">
+                            <h3 style={{ fontSize: '1.1rem', marginBottom: '24px' }}>Security</h3>
+                            <form onSubmit={handleChangePassword}>
+                                <div className="form-group">
+                                    <label>Current Password</label>
+                                    <input
+                                        type="password"
+                                        placeholder="••••••••"
+                                        value={passwords.current}
+                                        onChange={(e) => setPasswords({ ...passwords, current: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                                <div className="form-group" style={{ marginBottom: '32px' }}>
+                                    <label>New Password</label>
+                                    <input
+                                        type="password"
+                                        placeholder="Min 6 characters"
+                                        value={passwords.new}
+                                        onChange={(e) => setPasswords({ ...passwords, new: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                                <button type="submit" className="btn-primary" disabled={loading} style={{ width: 'auto', padding: '12px 32px' }}>
+                                    {loading ? 'Updating...' : 'Change Password'}
+                                </button>
+                            </form>
+                        </section>
+                    </div>
                 )}
             </main >
 
