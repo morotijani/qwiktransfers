@@ -77,9 +77,10 @@ const AdminProfile = () => {
                     padding: '16px',
                     borderRadius: '8px',
                     marginBottom: '24px',
-                    background: msg.type === 'success' ? '#d1fae5' : '#fee2e2',
-                    color: msg.type === 'success' ? '#065f46' : '#991b1b',
-                    fontWeight: 600
+                    background: msg.type === 'success' ? 'var(--accent-peach)' : 'var(--danger)',
+                    color: msg.type === 'success' ? 'var(--primary)' : '#fff',
+                    fontWeight: 600,
+                    border: '1px solid var(--border-color)'
                 }}>
                     {msg.text}
                 </div>
@@ -112,7 +113,7 @@ const AdminProfile = () => {
                     <form onSubmit={handleUpdateProfile}>
                         <div className="form-group">
                             <label>Email Address (Immutable)</label>
-                            <input type="text" value={user?.email || ''} readOnly style={{ background: '#f9f9f9', cursor: 'not-allowed' }} />
+                            <input type="text" value={user?.email || ''} readOnly style={{ background: 'var(--accent-peach)', cursor: 'not-allowed', opacity: 0.8 }} />
                         </div>
                         <div className="form-group">
                             <label>Full Name</label>

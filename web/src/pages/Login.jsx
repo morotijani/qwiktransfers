@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
+import ThemeSwitcher from '../components/ThemeSwitcher';
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -38,7 +39,10 @@ const Login = () => {
     };
 
     return (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+        <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', transition: 'background-color 0.3s ease' }}>
+            <div style={{ position: 'absolute', top: '24px', right: '24px' }}>
+                <ThemeSwitcher />
+            </div>
             <div className="card" style={{ maxWidth: '440px', width: '90%', textAlign: 'center' }}>
                 <h1 style={{ fontSize: '2.5rem', marginBottom: '8px' }}>QWIK</h1>
                 <p style={{ color: 'var(--text-muted)', marginBottom: '40px' }}>Sign in to Qwiktransfers</p>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
+import ThemeSwitcher from '../components/ThemeSwitcher';
 
 const countryCodes = {
     'Ghana': '+233',
@@ -77,7 +78,10 @@ const Register = () => {
     };
 
     return (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', padding: '20px' }}>
+        <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', padding: '20px', transition: 'background-color 0.3s ease' }}>
+            <div style={{ position: 'absolute', top: '24px', right: '24px' }}>
+                <ThemeSwitcher />
+            </div>
             <div className="card" style={{ maxWidth: '480px', width: '100%', textAlign: 'center' }}>
                 <h1 style={{ fontSize: '2.5rem', marginBottom: '8px' }}>QWIK</h1>
                 <p style={{ color: 'var(--text-muted)', marginBottom: '32px' }}>

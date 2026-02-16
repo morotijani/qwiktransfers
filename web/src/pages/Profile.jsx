@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { Link } from 'react-router-dom';
+import ThemeSwitcher from '../components/ThemeSwitcher';
 
 const Profile = () => {
     const { user, refreshProfile } = useAuth();
@@ -87,7 +88,8 @@ const Profile = () => {
                 <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
                     <h1 style={{ fontSize: '1.5rem', fontWeight: 800 }}>QWIK</h1>
                 </Link>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                    <ThemeSwitcher />
                     <Link to="/" style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-deep-brown)', textDecoration: 'none' }}>Dashboard</Link>
                 </div>
             </header>

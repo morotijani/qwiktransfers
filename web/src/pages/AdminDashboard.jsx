@@ -5,6 +5,7 @@ import { toast } from 'react-hot-toast';
 import AdminSidebar from '../components/AdminSidebar';
 import PaymentSettings from '../components/PaymentSettings';
 import AdminProfile from '../components/AdminProfile';
+import ThemeSwitcher from '../components/ThemeSwitcher';
 
 const AdminDashboard = () => {
     const { logout } = useAuth();
@@ -12,6 +13,7 @@ const AdminDashboard = () => {
     const [users, setUsers] = useState([]);
     const [vendors, setVendors] = useState([]);
     const [tab, setTab] = useState('transactions'); // 'transactions', 'kyc', 'users', 'vendors'
+    const [sidebarOpen, setSidebarOpen] = useState(false);
     const [adminStats, setAdminStats] = useState({ pendingTransactions: 0, pendingKYC: 0, successVolume: 0 });
 
     // Transactions Pagination & Filter
@@ -165,12 +167,27 @@ const AdminDashboard = () => {
     };
 
     return (
-        <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-peach)' }}>
-            <AdminSidebar activeTab={tab} setActiveTab={setTab} logout={logout} />
+        <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-peach)', transition: 'background-color 0.3s ease' }}>
+            {/* Mobile Header */}
+            <div className="mobile-header">
+                <button className="mobile-nav-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
+                    {sidebarOpen ? '✕' : '☰'}
+                </button>
+                <h1 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0, color: 'var(--primary)' }}>QWIK Admin</h1>
+                <div style={{ width: '40px' }}></div> {/* Spacer */}
+            </div>
 
-            <main style={{ marginLeft: '260px', flex: 1, padding: '40px', maxWidth: '1200px' }}>
+            <AdminSidebar
+                activeTab={tab}
+                setActiveTab={(t) => { setTab(t); setSidebarOpen(false); }}
+                logout={logout}
+                isOpen={sidebarOpen}
+                toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+            />
+
+            <main className="admin-main" style={{ flex: 1, padding: '40px', maxWidth: '1200px' }}>
                 {tab === 'transactions' && (
-                    <section style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px', marginBottom: '40px' }} className="fade-in">
+                    <section className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px', marginBottom: '40px' }}>
                         <div className="card" style={{ padding: '24px', background: 'var(--text-deep-brown)', color: '#fff' }}>
                             <div style={{ fontSize: '0.75rem', opacity: 0.7, fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px' }}>Pending Transactions</div>
                             <div style={{ fontSize: '2rem', fontWeight: 800 }}>{adminStats.pendingTransactions}</div>
@@ -199,7 +216,7 @@ const AdminDashboard = () => {
                                             <select
                                                 value={statusFilter}
                                                 onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-                                                style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '0.8rem', fontWeight: 600 }}
+                                                style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '0.8rem', fontWeight: 600, background: 'var(--input-bg)', color: 'var(--text-deep-brown)' }}
                                             >
                                                 <option value="all">All Status</option>
                                                 <option value="pending">Pending</option>
@@ -213,7 +230,7 @@ const AdminDashboard = () => {
                                                     placeholder="Search..."
                                                     value={search}
                                                     onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                                                    style={{ padding: '6px 10px 6px 28px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '0.8rem' }}
+                                                    style={{ padding: '6px 10px 6px 28px', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '0.8rem', background: 'var(--input-bg)', color: 'var(--text-deep-brown)' }}
                                                 />
                                                 <span style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', opacity: 0.4, fontSize: '0.8rem' }}>🔍</span>
                                             </div>
@@ -229,7 +246,7 @@ const AdminDashboard = () => {
                                                     placeholder="Search Users..."
                                                     value={userSearch}
                                                     onChange={(e) => { setUserSearch(e.target.value); setUserPage(1); }}
-                                                    style={{ padding: '6px 10px 6px 28px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '0.8rem' }}
+                                                    style={{ padding: '6px 10px 6px 28px', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '0.8rem', background: 'var(--input-bg)', color: 'var(--text-deep-brown)' }}
                                                 />
                                                 <span style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', opacity: 0.4, fontSize: '0.8rem' }}>🔍</span>
                                             </div>

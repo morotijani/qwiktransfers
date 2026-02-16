@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
+import ThemeSwitcher from '../components/ThemeSwitcher';
 
 const UserDashboard = () => {
     const { user, logout, refreshProfile } = useAuth();
@@ -350,25 +351,40 @@ const UserDashboard = () => {
                             {user?.kyc_status === 'verified' ? '✓ Verified' : 'Verify ID'}
                         </Link>
                     </nav>
-                    <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        {user?.profile_picture && (
-                            <img
-                                src={`http://localhost:5000${user.profile_picture}`}
-                                alt="Avatar"
-                                style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid var(--accent-peach)' }}
-                            />
-                        )}
-                        <Link to="/profile" style={{ textDecoration: 'none', color: 'inherit', textAlign: 'right' }}>
-                            <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{user?.full_name || user?.email}</div>
-                            <div style={{
-                                fontSize: '0.7rem',
-                                fontWeight: 700,
-                                color: user?.kyc_status === 'verified' ? 'var(--success)' : 'var(--warning)',
-                                textTransform: 'uppercase'
-                            }}>
-                                {user?.kyc_status || 'Unverified'}
-                            </div>
-                        </Link>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                        <ThemeSwitcher />
+                        <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            {user?.profile_picture && (
+                                <img
+                                    src={`http://localhost:5000${user.profile_picture}`}
+                                    alt="Avatar"
+                                    style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid var(--accent-peach)' }}
+                                />
+                            )}
+                            <Link to="/profile" style={{ textDecoration: 'none', color: 'inherit', textAlign: 'right', display: 'none' }}>
+                                <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{user?.full_name || user?.email}</div>
+                                <div style={{
+                                    fontSize: '0.7rem',
+                                    fontWeight: 700,
+                                    color: user?.kyc_status === 'verified' ? 'var(--success)' : 'var(--warning)',
+                                    textTransform: 'uppercase'
+                                }}>
+                                    {user?.kyc_status || 'Unverified'}
+                                </div>
+                            </Link>
+                            {/* Mobile profile link - icon only or simpler */}
+                            <Link to="/profile" className="desktop-only" style={{ textDecoration: 'none', color: 'inherit', textAlign: 'right' }}>
+                                <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{user?.full_name || user?.email}</div>
+                                <div style={{
+                                    fontSize: '0.7rem',
+                                    fontWeight: 700,
+                                    color: user?.kyc_status === 'verified' ? 'var(--success)' : 'var(--warning)',
+                                    textTransform: 'uppercase'
+                                }}>
+                                    {user?.kyc_status || 'Unverified'}
+                                </div>
+                            </Link>
+                        </div>
                     </div>
                     <button
                         onClick={logout}
@@ -387,7 +403,7 @@ const UserDashboard = () => {
                 </div>
             </header>
 
-            <main style={{ display: 'grid', gridTemplateColumns: 'minmax(400px, 460px) 1fr', gap: '48px', alignItems: 'start' }}>
+            <main className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 460px) 1fr', gap: '32px', alignItems: 'start' }}>
                 <aside style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                     {/* Verification & Limits Section */}
                     <section className="card" style={{ padding: '24px' }}>

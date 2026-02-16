@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { toast } from 'react-hot-toast';
+import ThemeSwitcher from '../components/ThemeSwitcher';
 
 const VendorDashboard = () => {
     const { user, logout, refreshProfile } = useAuth();
@@ -235,23 +236,24 @@ const VendorDashboard = () => {
 
     return (
         <div className="dashboard-container">
-            <header>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800 }}>QWIK<span style={{ fontWeight: 400, opacity: 0.6 }}>VENDOR</span></h1>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: '#f5f5f5', padding: '6px 16px', borderRadius: '20px' }}>
-                        <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: isOnline ? 'var(--success)' : '#ccc' }}></div>
-                        <span style={{ fontSize: '0.85rem', fontWeight: 700, color: isOnline ? 'var(--text-deep-brown)' : 'var(--text-muted)' }}>
+            <header style={{ height: 'auto', minHeight: '72px', padding: '10px 40px', flexWrap: 'wrap', gap: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
+                    <h1 style={{ fontSize: '1.2rem', fontWeight: 800 }}>QWIK<span className="desktop-only" style={{ fontWeight: 400, opacity: 0.6 }}>VENDOR</span></h1>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--accent-peach)', padding: '4px 12px', borderRadius: '20px' }}>
+                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: isOnline ? 'var(--success)' : '#ccc' }}></div>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-deep-brown)' }}>
                             {isOnline ? 'ONLINE' : 'OFFLINE'}
                         </span>
                         <button
                             onClick={toggleStatus}
-                            style={{ marginLeft: '12px', padding: '4px 12px', borderRadius: '12px', border: 'none', background: isOnline ? 'var(--danger)' : 'var(--primary)', color: '#fff', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
+                            style={{ marginLeft: '8px', padding: '2px 10px', borderRadius: '10px', border: 'none', background: isOnline ? 'var(--danger)' : 'var(--primary)', color: '#fff', fontSize: '0.65rem', fontWeight: 700, cursor: 'pointer' }}
                         >
-                            Go {isOnline ? 'Offline' : 'Online'}
+                            {isOnline ? 'Go Offline' : 'Go Online'}
                         </button>
                     </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', flexShrink: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexShrink: 0 }}>
+                    <ThemeSwitcher />
                     <div
                         onClick={() => setActiveTab('settings')}
                         style={{ textAlign: 'right', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
@@ -297,22 +299,22 @@ const VendorDashboard = () => {
             </header>
 
             <main>
-                <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
+                <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
                     <button
                         onClick={() => setActiveTab('pool')}
-                        style={{ padding: '10px 24px', borderRadius: '12px', border: 'none', background: activeTab === 'pool' ? 'var(--text-deep-brown)' : '#fff', color: activeTab === 'pool' ? '#fff' : 'var(--text-deep-brown)', fontWeight: 700, cursor: 'pointer', boxShadow: 'var(--shadow-sm)' }}
+                        style={{ padding: '10px 24px', borderRadius: '12px', border: 'none', background: activeTab === 'pool' ? 'var(--text-deep-brown)' : 'var(--card-bg)', color: activeTab === 'pool' ? '#fff' : 'var(--text-deep-brown)', fontWeight: 700, cursor: 'pointer', boxShadow: 'var(--shadow)', border: '1px solid var(--border-color)' }}
                     >
                         Available Pool ({pool.length})
                     </button>
                     <button
                         onClick={() => setActiveTab('my')}
-                        style={{ padding: '10px 24px', borderRadius: '12px', border: 'none', background: activeTab === 'my' ? 'var(--text-deep-brown)' : '#fff', color: activeTab === 'my' ? '#fff' : 'var(--text-deep-brown)', fontWeight: 700, cursor: 'pointer', boxShadow: 'var(--shadow-sm)' }}
+                        style={{ padding: '10px 24px', borderRadius: '12px', border: 'none', background: activeTab === 'my' ? 'var(--text-deep-brown)' : 'var(--card-bg)', color: activeTab === 'my' ? '#fff' : 'var(--text-deep-brown)', fontWeight: 700, cursor: 'pointer', boxShadow: 'var(--shadow)', border: '1px solid var(--border-color)' }}
                     >
-                        My Active Transfers ({myTransactions.filter(tx => tx.status === 'processing').length})
+                        My Transfers ({myTransactions.filter(tx => tx.status === 'processing').length})
                     </button>
                     <button
                         onClick={() => setActiveTab('settings')}
-                        style={{ padding: '10px 24px', borderRadius: '12px', border: 'none', background: activeTab === 'settings' ? 'var(--text-deep-brown)' : '#fff', color: activeTab === 'settings' ? '#fff' : 'var(--text-deep-brown)', fontWeight: 700, cursor: 'pointer', boxShadow: 'var(--shadow-sm)' }}
+                        style={{ padding: '10px 24px', borderRadius: '12px', border: 'none', background: activeTab === 'settings' ? 'var(--text-deep-brown)' : 'var(--card-bg)', color: activeTab === 'settings' ? '#fff' : 'var(--text-deep-brown)', fontWeight: 700, cursor: 'pointer', boxShadow: 'var(--shadow)', border: '1px solid var(--border-color)' }}
                     >
                         Security & Profile
                     </button>

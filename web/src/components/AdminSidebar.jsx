@@ -1,6 +1,7 @@
 import React from 'react';
+import ThemeSwitcher from './ThemeSwitcher';
 
-const AdminSidebar = ({ activeTab, setActiveTab, logout }) => {
+const AdminSidebar = ({ activeTab, setActiveTab, logout, isOpen, toggleSidebar }) => {
     const menuItems = [
         { id: 'transactions', label: 'Transactions', icon: '📊' },
         { id: 'kyc', label: 'KYC Review', icon: '🆔' },
@@ -11,9 +12,10 @@ const AdminSidebar = ({ activeTab, setActiveTab, logout }) => {
     ];
 
     return (
-        <aside style={{ width: '260px', background: '#fff', borderRight: '1px solid var(--border-color)', height: '100vh', position: 'fixed', left: 0, top: 0, display: 'flex', flexDirection: 'column', zIndex: 1000 }}>
-            <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)' }}>
-                <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)', letterSpacing: '-0.5px' }}>QWIK Admin</h1>
+        <aside className={`sidebar ${isOpen ? 'open' : ''}`} style={{ background: 'var(--card-bg)' }}>
+            <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)', letterSpacing: '-0.5px', margin: 0 }}>QWIK Admin</h1>
+                <ThemeSwitcher />
             </div>
 
             <nav style={{ flex: 1, padding: '24px', display: 'flex', flexDirection: 'column', gap: '8px' }}>

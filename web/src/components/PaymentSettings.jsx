@@ -137,7 +137,7 @@ const PaymentSettings = () => {
                         gap: 12px;
                         margin-bottom: 24px;
                         padding: 12px;
-                        background: var(--bg-peach);
+                        background: var(--accent-peach);
                         border-radius: 12px;
                         width: fit-content;
                     }
@@ -253,7 +253,7 @@ const PaymentSettings = () => {
                                     onChange={(e) => setRateSettings({ ...rateSettings, manual_rate_cad_ghs: parseFloat(e.target.value) })}
                                     placeholder="e.g. 10.50"
                                 />
-                                <div style={{ marginTop: '12px', padding: '12px', background: 'var(--bg-peach)', borderRadius: '8px', border: '1px dashed var(--border-color)' }}>
+                                <div style={{ marginTop: '12px', padding: '12px', background: 'var(--accent-peach)', borderRadius: '8px', border: '1px dashed var(--border-color)' }}>
                                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700 }}>CALCULATED SYSTEM RATE</div>
                                     <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--primary)' }}>
                                         1 GHS = {calculatedCustomerRate} CAD

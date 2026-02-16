@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 // Pages
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -28,62 +29,64 @@ function App() {
   return (
     <Router>
       <Toaster position="top-center" reverseOrder={false} />
-      <AuthProvider>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/register-success" element={<RegisterSuccess />} />
-          <Route path="/verify-email" element={<EmailVerified />} />
-          <Route path="/resend-verification" element={<ResendVerification />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
+      <ThemeProvider>
+        <AuthProvider>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/register-success" element={<RegisterSuccess />} />
+            <Route path="/verify-email" element={<EmailVerified />} />
+            <Route path="/resend-verification" element={<ResendVerification />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
 
-          <Route
-            path="/admin"
-            element={
-              <PrivateRoute role="admin">
-                <AdminDashboard />
-              </PrivateRoute>
-            }
-          />
+            <Route
+              path="/admin"
+              element={
+                <PrivateRoute role="admin">
+                  <AdminDashboard />
+                </PrivateRoute>
+              }
+            />
 
-          <Route
-            path="/vendor"
-            element={
-              <PrivateRoute role="vendor">
-                <VendorDashboard />
-              </PrivateRoute>
-            }
-          />
+            <Route
+              path="/vendor"
+              element={
+                <PrivateRoute role="vendor">
+                  <VendorDashboard />
+                </PrivateRoute>
+              }
+            />
 
-          <Route
-            path="/profile"
-            element={
-              <PrivateRoute>
-                <Profile />
-              </PrivateRoute>
-            }
-          />
+            <Route
+              path="/profile"
+              element={
+                <PrivateRoute>
+                  <Profile />
+                </PrivateRoute>
+              }
+            />
 
-          <Route
-            path="/kyc"
-            element={
-              <PrivateRoute>
-                <KycVerification />
-              </PrivateRoute>
-            }
-          />
+            <Route
+              path="/kyc"
+              element={
+                <PrivateRoute>
+                  <KycVerification />
+                </PrivateRoute>
+              }
+            />
 
-          <Route
-            path="/"
-            element={
-              <PrivateRoute>
-                <UserDashboard />
-              </PrivateRoute>
-            }
-          />
-        </Routes>
-      </AuthProvider>
+            <Route
+              path="/"
+              element={
+                <PrivateRoute>
+                  <UserDashboard />
+                </PrivateRoute>
+              }
+            />
+          </Routes>
+        </AuthProvider>
+      </ThemeProvider>
     </Router>
   );
 }
