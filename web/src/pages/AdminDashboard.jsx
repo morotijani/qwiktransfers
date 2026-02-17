@@ -33,7 +33,7 @@ const AdminDashboard = () => {
     const [userPage, setUserPage] = useState(1);
     const [userTotalPages, setUserTotalPages] = useState(1);
     const [userSearch, setUserSearch] = useState('');
-    const [loading, setLoading] = useState(false);
+
 
     // Selected items for Modals
     const [selectedTx, setSelectedTx] = useState(null);
@@ -87,7 +87,6 @@ const AdminDashboard = () => {
     };
 
     const fetchTransactions = async () => {
-        setLoading(true);
         try {
             const res = await api.get(`/transactions?page=${page}&limit=10&search=${search}&status=${statusFilter}`);
             setTransactions(res.data.transactions);
@@ -96,12 +95,10 @@ const AdminDashboard = () => {
         } catch (error) {
             console.error(error);
         } finally {
-            setLoading(false);
         }
     };
 
     const fetchUsersServerSide = async (kycStatus = '') => {
-        setLoading(true);
         try {
             // Strictly fetch 'user' role for the Users tab
             const roleParam = tab === 'users' ? 'user' : '';
@@ -111,7 +108,6 @@ const AdminDashboard = () => {
         } catch (error) {
             console.error(error);
         } finally {
-            setLoading(false);
         }
     };
 
@@ -145,7 +141,6 @@ const AdminDashboard = () => {
     };
 
     const fetchAuditLogs = async () => {
-        setLoading(true);
         try {
             const res = await api.get(`/system/admin/audit-logs?page=${auditPage}&limit=20&search=${auditSearch}&action=${auditAction}`);
             setAuditLogs(res.data.logs);
@@ -153,7 +148,6 @@ const AdminDashboard = () => {
         } catch (error) {
             console.error('Audit error:', error);
         } finally {
-            setLoading(false);
         }
     };
 
@@ -188,18 +182,7 @@ const AdminDashboard = () => {
         }
     };
 
-    const updateRole = async (userId, role) => {
-        try {
-            await api.patch('/auth/update-role', { userId, role });
-            toast.success(`User role updated to ${role}`);
-            if (tab === 'users') fetchUsersServerSide();
-            if (tab === 'vendors') fetchVendors();
-            setShowUserModal(false);
-            setShowAddVendorModal(false);
-        } catch (error) {
-            toast.error('Failed to update role');
-        }
-    };
+
 
     const updateRegion = async (userId, country) => {
         try {
@@ -270,20 +253,22 @@ const AdminDashboard = () => {
 
             <div className="admin-main-container">
                 <header className="admin-header desktop-only">
-                    <div className="admin-top-nav-actions">
-                        <div className="admin-utility-icons">
-                            <NotificationPanel />
-                            <ThemeSwitcher />
-                        </div>
-                        <div className="admin-profile-chip" onClick={() => setTab('profile')}>
-                            <img
-                                src={user?.profile_picture ? `http://localhost:5000${user.profile_picture}` : 'https://via.placeholder.com/40'}
-                                alt="Admin Avatar"
-                                className="admin-profile-avatar"
-                            />
-                            <div className="admin-profile-info">
-                                <span className="admin-profile-name">{user?.full_name || 'Administrator'}</span>
-                                <span className="admin-profile-role">Master Admin</span>
+                    <div className="admin-header-content">
+                        <div className="admin-top-nav-actions">
+                            <div className="admin-utility-icons">
+                                <NotificationPanel />
+                                <ThemeSwitcher />
+                            </div>
+                            <div className="admin-profile-chip" onClick={() => setTab('profile')}>
+                                <img
+                                    src={user?.profile_picture ? `http://localhost:5000${user.profile_picture}` : 'https://via.placeholder.com/40'}
+                                    alt="Admin Avatar"
+                                    className="admin-profile-avatar"
+                                />
+                                <div className="admin-profile-info">
+                                    <span className="admin-profile-name">{user?.full_name || 'Administrator'}</span>
+                                    <span className="admin-profile-role">Master Admin</span>
+                                </div>
                             </div>
                         </div>
                     </div>

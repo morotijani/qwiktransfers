@@ -67,7 +67,7 @@ const PaymentSettings = () => {
             setRateSettings({
                 use_api: res.data.use_api,
                 spread: res.data.spread,
-                manual_rate_cad_ghs: res.data.manual_rate_cad_ghs || (1 / res.data.rate).toFixed(2),
+                manual_rate_cad_ghs: parseFloat(res.data.manual_rate_cad_ghs || (1 / res.data.rate)).toFixed(2),
                 market_rate_cad_ghs: res.data.market_rate_cad_ghs
             });
         } catch (error) {

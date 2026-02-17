@@ -19,36 +19,12 @@ const getRates = async (req, res) => {
         let finalRate = rateRecord.rate;
         let marketRateCADtoGHS = null;
 
-        // Always fetch market rate for reference
+        // Fetch market rate for reference
         try {
             const response = await axios.get('https://api.exchangerate-api.com/v4/latest/CAD');
             marketRateCADtoGHS = response.data.rates.GHS;
         } catch (apiError) {
             console.error('External API error:', apiError.message);
-        }
-
-        if (rateRecord.use_api && marketRateCADtoGHS) {
-            const spreadPercent = rateRecord.spread || 5.0;
-            // Admin enters spread: e.g. 5% 
-            // Market: 1 CAD = 10 GHS. 
-            // Spread adjusted: 1 CAD = 10 * 1.05 = 10.5 GHS
-            // Internal rate (1 GHS = ? CAD): 1 / 10.5 = 0.0952
-            const adjustedCADtoGHS = marketRateCADtoGHS * (1 + spreadPercent / 100);
-            finalRate = (1 / adjustedCADtoGHS).toFixed(6);
-
-            // Update internal rate
-            rateRecord.rate = finalRate;
-            await rateRecord.save();
-        } else if (!rateRecord.use_api) {
-            // Use manual rate (1 CAD = X GHS)
-            const manualCADtoGHS = rateRecord.manual_rate || 10.0;
-            finalRate = (1 / manualCADtoGHS).toFixed(6);
-
-            // Sync internal rate for transaction calculations
-            if (parseFloat(rateRecord.rate).toFixed(6) !== finalRate) {
-                rateRecord.rate = finalRate;
-                await rateRecord.save();
-            }
         }
 
         res.json({
@@ -57,7 +33,7 @@ const getRates = async (req, res) => {
             market_rate_cad_ghs: marketRateCADtoGHS,
             use_api: rateRecord.use_api,
             spread: rateRecord.spread,
-            manual_rate_cad_ghs: rateRecord.manual_rate,
+            manual_rate_cad_ghs: parseFloat(rateRecord.manual_rate),
             updatedAt: rateRecord.updatedAt
         });
     } catch (error) {
@@ -78,6 +54,26 @@ const updateRateSettings = async (req, res) => {
         if (use_api !== undefined) rateRecord.use_api = use_api;
         if (manual_rate !== undefined) rateRecord.manual_rate = manual_rate;
         if (spread !== undefined) rateRecord.spread = spread;
+
+        // Re-calculate the actual transaction rate immediately to ensure persistence
+        if (rateRecord.use_api) {
+            try {
+                const response = await axios.get('https://api.exchangerate-api.com/v4/latest/CAD');
+                const marketRate = response.data.rates.GHS;
+                if (marketRate) {
+                    const adjustedCADtoGHS = marketRate * (1 + (rateRecord.spread || 5.0) / 100);
+                    rateRecord.rate = (1 / adjustedCADtoGHS).toFixed(6);
+                }
+            } catch (apiError) {
+                console.error('Sync error in update:', apiError.message);
+                // Fallback to manual calculation if API fails during toggle
+                const manualCADtoGHS = rateRecord.manual_rate || 10.0;
+                rateRecord.rate = (1 / manualCADtoGHS).toFixed(6);
+            }
+        } else {
+            const manualCADtoGHS = rateRecord.manual_rate || 10.0;
+            rateRecord.rate = (1 / manualCADtoGHS).toFixed(6);
+        }
 
         await rateRecord.save();
 
