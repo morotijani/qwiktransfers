@@ -9,116 +9,65 @@ import {
     Alert,
     RefreshControl,
     Image,
+    SafeAreaView,
+    StatusBar,
+    Modal
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import api from '../services/api';
+import ShimmerPlaceholder from '../components/ShimmerPlaceholder';
 
-const DashboardScreen = () => {
+const ActionButton = ({ icon, label, onPress, theme }) => (
+    <TouchableOpacity style={styles.actionItem} onPress={onPress}>
+        <View style={[styles.actionIconContainer, { backgroundColor: theme.primary }]}>
+            <Text style={styles.actionIcon}>{icon}</Text>
+        </View>
+        <Text style={[styles.actionLabel, { color: theme.text }]}>{label}</Text>
+    </TouchableOpacity>
+);
+
+const DashboardScreen = ({ navigation }) => {
     const { user, logout, refreshProfile } = useAuth();
+    const theme = useTheme();
     const [transactions, setTransactions] = useState([]);
-    const [amount, setAmount] = useState('');
-    const [recipientType, setRecipientType] = useState('momo');
-    const [recipientName, setRecipientName] = useState('');
-    const [recipientAccount, setRecipientAccount] = useState('');
-    const [rate, setRate] = useState(0.09);
     const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
+    const [totalSent, setTotalSent] = useState(0);
 
     useEffect(() => {
-        fetchTransactions();
-        fetchRate();
+        fetchData();
     }, []);
+
+    const fetchData = async () => {
+        setLoading(true);
+        await Promise.all([fetchTransactions(), refreshProfile?.()]);
+        setLoading(false);
+    };
 
     const fetchTransactions = async () => {
         try {
             const res = await api.get('/transactions');
-            setTransactions(res.data);
-        } catch (error) {
-            console.error(error);
-        }
-    };
+            const txs = res.data.transactions || res.data; // Handle different API response shapes
+            setTransactions(txs);
 
-    const fetchRate = async () => {
-        try {
-            const res = await api.get('/rates');
-            setRate(res.data.rate);
+            // Calculate total sent (GHS converted to CAD for a single master number if needed, 
+            // but for Hawala we often just show a primary currency total)
+            const total = txs
+                .filter(tx => tx.status === 'sent')
+                .reduce((acc, tx) => acc + parseFloat(tx.amount_sent), 0);
+            setTotalSent(total);
         } catch (error) {
-            console.error('Rate Error:', error);
+            console.error('Fetch Error:', error);
         }
     };
 
     const onRefresh = async () => {
         setRefreshing(true);
-        await Promise.all([fetchTransactions(), fetchRate(), refreshProfile?.()]);
+        await fetchData();
         setRefreshing(false);
-    };
-
-    const handleSend = async () => {
-        if (!amount || !recipientName || !recipientAccount) {
-            Alert.alert('Error', 'Please fill all recipient details');
-            return;
-        }
-
-        setLoading(true);
-        try {
-            await api.post('/transactions', {
-                amount_sent: amount,
-                type: 'GHS-CAD',
-                recipient_details: {
-                    type: recipientType,
-                    name: recipientName,
-                    account: recipientAccount
-                }
-            });
-            setAmount('');
-            setRecipientName('');
-            setRecipientAccount('');
-            await fetchTransactions();
-            Alert.alert('Success', 'Transfer request initiated! Please upload proof of payment.');
-        } catch (error) {
-            Alert.alert('Error', 'Failed to send request');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleUploadProof = async (txId) => {
-        const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (permissionResult.granted === false) {
-            Alert.alert('Permission Required', 'You need to allow access to photos to upload proof.');
-            return;
-        }
-
-        const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsEditing: true,
-            quality: 0.8,
-        });
-
-        if (!result.canceled) {
-            const localUri = result.assets[0].uri;
-            const filename = localUri.split('/').pop();
-            const match = /\.(\w+)$/.exec(filename);
-            const type = match ? `image/${match[1]}` : `image`;
-
-            const formData = new FormData();
-            formData.append('proof', { uri: localUri, name: filename, type });
-
-            setLoading(true);
-            try {
-                await api.post(`/transactions/${txId}/upload-proof`, formData, {
-                    headers: { 'Content-Type': 'multipart/form-data' },
-                });
-                Alert.alert('Success', 'Proof uploaded successfully!');
-                fetchTransactions();
-            } catch (error) {
-                Alert.alert('Error', 'Failed to upload proof');
-            } finally {
-                setLoading(false);
-            }
-        }
     };
 
     const getStatusColor = (status) => {
@@ -126,211 +75,287 @@ const DashboardScreen = () => {
             case 'sent': return '#10b981';
             case 'processing': return '#f59e0b';
             case 'pending': return '#6366f1';
+            case 'cancelled': return '#ef4444';
             default: return '#6b7280';
         }
     };
 
     return (
-        <ScrollView
-            style={styles.container}
-            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        >
-            <View style={styles.header}>
-                <View>
-                    <Text style={styles.headerTitle}>QwikTransfers</Text>
-                    <Text style={styles.verificationText}>
-                        Status: <Text style={{ color: user?.kyc_status === 'verified' ? '#10b981' : '#f59e0b' }}>
-                            {user?.kyc_status?.toUpperCase() || 'NOT VERIFIED'}
-                        </Text>
-                    </Text>
-                </View>
-                <TouchableOpacity onPress={logout} style={styles.logoutButton}>
-                    <Text style={styles.logoutText}>Logout</Text>
-                </TouchableOpacity>
-            </View>
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+            <StatusBar barStyle={theme.isDark ? "light-content" : "dark-content"} />
 
-            <View style={styles.card}>
-                <Text style={styles.cardTitle}>New Transfer</Text>
-                <View style={styles.formGroup}>
-                    <Text style={styles.label}>Amount (GHS)</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="0.00"
-                        value={amount}
-                        onChangeText={setAmount}
-                        keyboardType="decimal-pad"
+            <ScrollView
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing === true}
+                        onRefresh={onRefresh}
+                        colors={[theme.primary]}
+                        tintColor={theme.primary}
+                        enabled={true}
                     />
-                </View>
-
-                <View style={styles.formGroup}>
-                    <Text style={styles.label}>Recipient Method</Text>
-                    <View style={styles.pickerContainer}>
-                        <Picker
-                            selectedValue={recipientType}
-                            onValueChange={(itemValue) => setRecipientType(itemValue)}
-                            style={styles.picker}
-                        >
-                            <Picker.Item label="Momo (MTN/Vodafone)" value="momo" />
-                            <Picker.Item label="Bank Transfer" value="bank" />
-                            <Picker.Item label="PayPal" value="paypal" />
-                        </Picker>
+                }
+            >
+                {/* Coinbase-style Portfolio Header */}
+                <View style={styles.portfolioHeader}>
+                    <Text style={[styles.portfolioLabel, { color: theme.textMuted }]}>Total Sent (GHS)</Text>
+                    <Text style={[styles.portfolioValue, { color: theme.text }]}>
+                        ₵{totalSent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </Text>
+                    <View style={styles.changeBadge}>
+                        <Text style={styles.changeText}>Global Fintech Solutions</Text>
                     </View>
                 </View>
 
-                <View style={styles.formGroup}>
-                    <Text style={styles.label}>Full Name</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Recipient Name"
-                        value={recipientName}
-                        onChangeText={setRecipientName}
-                    />
+                {/* Quick Action Buttons */}
+                <View style={styles.actionGrid}>
+                    <ActionButton icon="↑" label="Send" onPress={() => navigation.navigate('Transfer')} theme={theme} />
+                    <ActionButton icon="↓" label="Receive" onPress={() => { }} theme={theme} />
+                    <ActionButton icon="⇄" label="Rates" onPress={() => { }} theme={theme} />
+                    <ActionButton icon="👤" label="KYC" onPress={() => { }} theme={theme} />
                 </View>
 
-                <View style={styles.formGroup}>
-                    <Text style={styles.label}>Account Number / ID</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="e.g. 0244000000"
-                        value={recipientAccount}
-                        onChangeText={setRecipientAccount}
-                    />
+                {/* Performance / Rate Ticker Strip */}
+                <View style={[styles.tickerCard, { backgroundColor: theme.card }]}>
+                    <View style={styles.tickerItem}>
+                        <Text style={[styles.tickerLabel, { color: theme.textMuted }]}>GHS / CAD</Text>
+                        <Text style={[styles.tickerValue, { color: '#10b981' }]}>1 GHS = 0.0904 CAD</Text>
+                    </View>
                 </View>
 
-                <View style={styles.estimateBox}>
-                    <Text style={styles.estimateLabel}>Estimated Received</Text>
-                    <Text style={styles.estimateValue}>
-                        {amount ? (parseFloat(amount) * rate).toFixed(2) : '0.00'} CAD
-                    </Text>
-                    <Text style={styles.rateDetail}>Rate: 1 GHS = {rate} CAD</Text>
+                {/* Transactions Section */}
+                <View style={styles.sectionHeader}>
+                    <Text style={[styles.sectionTitle, { color: theme.text }]}>Recent Activity</Text>
+                    <TouchableOpacity>
+                        <Text style={[styles.seeAll, { color: theme.primary }]}>See all</Text>
+                    </TouchableOpacity>
                 </View>
 
-                <TouchableOpacity
-                    style={[styles.button, loading && styles.buttonDisabled]}
-                    onPress={handleSend}
-                    disabled={loading}
-                >
-                    <Text style={styles.buttonText}>{loading ? 'Processing...' : 'Send Request'}</Text>
-                </TouchableOpacity>
-            </View>
-
-            <View style={styles.card}>
-                <Text style={styles.cardTitle}>Transaction History</Text>
-                {transactions.length === 0 ? (
-                    <Text style={styles.emptyText}>No activity found</Text>
-                ) : (
-                    transactions.map((tx) => (
-                        <View key={tx.id} style={styles.transactionItem}>
-                            <View style={styles.txMain}>
-                                <View>
-                                    <Text style={styles.txRecipient}>{tx.recipient_details?.name}</Text>
-                                    <Text style={styles.txDate}>{new Date(tx.createdAt).toLocaleDateString()}</Text>
+                <View style={styles.listContainer}>
+                    {loading && transactions.length === 0 ? (
+                        [1, 2, 3].map(i => (
+                            <View key={i} style={[styles.txRow, { borderBottomColor: theme.border }]}>
+                                <ShimmerPlaceholder style={styles.txIconShimmer} />
+                                <View style={styles.txInfo}>
+                                    <ShimmerPlaceholder style={{ width: 120, height: 16, marginBottom: 6 }} />
+                                    <ShimmerPlaceholder style={{ width: 80, height: 12 }} />
                                 </View>
-                                <View style={{ alignItems: 'flex-end' }}>
-                                    <Text style={styles.txAmount}>{tx.amount_received} CAD</Text>
-                                    <View style={[styles.statusBadge, { backgroundColor: getStatusColor(tx.status) }]}>
-                                        <Text style={styles.statusText}>{tx.status}</Text>
+                            </View>
+                        ))
+                    ) : transactions.length === 0 ? (
+                        <View style={styles.emptyContainer}>
+                            <Text style={[styles.emptyText, { color: theme.textMuted }]}>No transactions yet</Text>
+                        </View>
+                    ) : (
+                        transactions.map((tx) => (
+                            <View key={tx.id} style={[styles.txRow, { borderBottomColor: theme.border }]}>
+                                <View style={[styles.txIconContainer, { backgroundColor: theme.isDark ? '#1e293b' : '#f1f5f9' }]}>
+                                    <Text style={styles.txIconLetter}>
+                                        {tx.recipient_details?.name?.charAt(0) || 'R'}
+                                    </Text>
+                                </View>
+                                <View style={styles.txInfo}>
+                                    <View style={styles.txMain}>
+                                        <Text style={[styles.txName, { color: theme.text }]} numberOfLines={1}>
+                                            {tx.recipient_details?.name}
+                                        </Text>
+                                        <Text style={[styles.txAmount, { color: theme.text }]}>
+                                            -{tx.amount_sent} {tx.type?.split('-')[0]}
+                                        </Text>
+                                    </View>
+                                    <View style={styles.txSub}>
+                                        <Text style={[styles.txDate, { color: theme.textMuted }]}>
+                                            {new Date(tx.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                        </Text>
+                                        <View style={[styles.statusDot, { backgroundColor: getStatusColor(tx.status) }]} />
+                                        <Text style={[styles.txStatus, { color: getStatusColor(tx.status) }]}>
+                                            {tx.status}
+                                        </Text>
                                     </View>
                                 </View>
                             </View>
-
-                            {tx.status === 'pending' && !tx.proof_url && (
-                                <TouchableOpacity
-                                    style={styles.uploadBtn}
-                                    onPress={() => handleUploadProof(tx.id)}
-                                >
-                                    <Text style={styles.uploadBtnText}>Upload Proof</Text>
-                                </TouchableOpacity>
-                            )}
-                            {tx.proof_url && (
-                                <Text style={styles.proofNote}>✓ Receipt Uploaded</Text>
-                            )}
-                        </View>
-                    ))
-                )}
-            </View>
-        </ScrollView>
+                        ))
+                    )}
+                </View>
+            </ScrollView>
+        </SafeAreaView>
     );
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#0f172a' },
-    header: {
+    container: { flex: 1 },
+    portfolioHeader: {
+        paddingTop: 40,
+        paddingBottom: 30,
+        paddingHorizontal: 24,
+        alignItems: 'center',
+    },
+    portfolioLabel: {
+        fontSize: 14,
+        fontWeight: '600',
+        marginBottom: 8,
+    },
+    portfolioValue: {
+        fontSize: 42,
+        fontWeight: '900',
+        letterSpacing: -1,
+    },
+    changeBadge: {
+        marginTop: 12,
+        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+        paddingHorizontal: 12,
+        paddingVertical: 4,
+        borderRadius: 20,
+    },
+    changeText: {
+        color: '#10b981',
+        fontSize: 12,
+        fontWeight: '700',
+    },
+    actionGrid: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        paddingHorizontal: 20,
+        marginBottom: 32,
+    },
+    actionItem: {
+        alignItems: 'center',
+        flex: 1,
+    },
+    actionIconContainer: {
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 8,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 2,
+    },
+    actionIcon: {
+        color: 'white',
+        fontSize: 24,
+        fontWeight: 'bold',
+    },
+    actionLabel: {
+        fontSize: 13,
+        fontWeight: '600',
+    },
+    tickerCard: {
+        marginHorizontal: 24,
+        padding: 16,
+        borderRadius: 16,
+        marginBottom: 32,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    tickerItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    tickerLabel: {
+        fontSize: 13,
+        fontWeight: '700',
+        marginRight: 8,
+    },
+    tickerValue: {
+        fontSize: 13,
+        fontWeight: '700',
+    },
+    sectionHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: 20,
-        paddingTop: 60,
-        backgroundColor: '#1e293b',
+        paddingHorizontal: 24,
+        marginBottom: 16,
     },
-    headerTitle: { fontSize: 22, fontWeight: 'bold', color: '#818cf8' },
-    verificationText: { fontSize: 12, color: '#94a3b8', marginTop: 4 },
-    logoutButton: { backgroundColor: 'rgba(255,255,255,0.05)', padding: 8, borderRadius: 6 },
-    logoutText: { color: '#f8fafc', fontSize: 14 },
-    card: {
-        backgroundColor: '#1e293b',
-        padding: 20,
-        margin: 15,
-        borderRadius: 16,
-        shadowColor: '#000',
-        shadowOpacity: 0.2,
-        shadowRadius: 10,
-        elevation: 5,
+    sectionTitle: {
+        fontSize: 18,
+        fontWeight: '800',
     },
-    cardTitle: { fontSize: 18, fontWeight: 'bold', color: '#f8fafc', marginBottom: 20 },
-    formGroup: { marginBottom: 15 },
-    label: { color: '#94a3b8', fontSize: 14, marginBottom: 8 },
-    input: {
-        backgroundColor: '#0f172a',
-        padding: 12,
-        borderRadius: 8,
-        color: '#f8fafc',
-        fontSize: 16,
-        borderWidth: 1,
-        borderColor: '#334155',
+    seeAll: {
+        fontSize: 14,
+        fontWeight: '700',
     },
-    pickerContainer: {
-        backgroundColor: '#0f172a',
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: '#334155',
-        overflow: 'hidden'
+    listContainer: {
+        paddingHorizontal: 24,
+        paddingBottom: 40,
     },
-    picker: { color: '#f8fafc' },
-    estimateBox: {
-        backgroundColor: 'rgba(99, 102, 241, 0.1)',
-        padding: 15,
-        borderRadius: 12,
-        marginBottom: 20,
-    },
-    estimateLabel: { color: '#818cf8', fontWeight: '600', fontSize: 13 },
-    estimateValue: { color: '#fff', fontSize: 24, fontWeight: 'bold', marginVertical: 5 },
-    rateDetail: { color: '#94a3b8', fontSize: 12 },
-    button: { backgroundColor: '#6366f1', padding: 16, borderRadius: 12, alignItems: 'center' },
-    buttonDisabled: { opacity: 0.5 },
-    buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-    emptyText: { textAlign: 'center', color: '#64748b', padding: 20 },
-    transactionItem: {
-        borderBottomWidth: 1,
-        borderBottomColor: '#334155',
-        paddingVertical: 15,
-    },
-    txMain: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
-    txRecipient: { color: '#f8fafc', fontWeight: '600', fontSize: 15 },
-    txDate: { color: '#64748b', fontSize: 12, marginTop: 2 },
-    txAmount: { color: '#10b981', fontWeight: 'bold', fontSize: 16 },
-    statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, marginTop: 5 },
-    statusText: { color: 'white', fontSize: 11, fontWeight: 'bold', textTransform: 'uppercase' },
-    uploadBtn: {
-        borderWidth: 1,
-        borderColor: '#6366f1',
-        padding: 8,
-        borderRadius: 6,
+    txRow: {
+        flexDirection: 'row',
         alignItems: 'center',
-        marginTop: 5,
+        paddingVertical: 16,
+        borderBottomWidth: 1,
     },
-    uploadBtnText: { color: '#6366f1', fontWeight: 'bold', fontSize: 13 },
-    proofNote: { color: '#10b981', fontSize: 12, textAlign: 'right', fontStyle: 'italic' }
+    txIconContainer: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 16,
+    },
+    txIconLetter: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#6366f1',
+    },
+    txInfo: {
+        flex: 1,
+    },
+    txMain: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 4,
+    },
+    txName: {
+        fontSize: 16,
+        fontWeight: '700',
+        flex: 1,
+    },
+    txAmount: {
+        fontSize: 16,
+        fontWeight: '700',
+        marginLeft: 12,
+    },
+    txSub: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    txDate: {
+        fontSize: 13,
+        fontWeight: '500',
+        marginRight: 12,
+    },
+    statusDot: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        marginRight: 6,
+    },
+    txStatus: {
+        fontSize: 13,
+        fontWeight: '600',
+        textTransform: 'capitalize',
+    },
+    emptyContainer: {
+        paddingVertical: 40,
+        alignItems: 'center',
+    },
+    emptyText: {
+        fontSize: 15,
+        fontWeight: '500',
+    },
+    txIconShimmer: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        marginRight: 16,
+    }
 });
 
 export default DashboardScreen;

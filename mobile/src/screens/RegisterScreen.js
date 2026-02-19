@@ -1,16 +1,32 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import {
+    View,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    StyleSheet,
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    StatusBar,
+    SafeAreaView,
+    ScrollView
+} from 'react-native';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 const RegisterScreen = ({ navigation }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [fullName, setFullName] = useState('');
+    const [phone, setPhone] = useState('');
     const { register } = useAuth();
     const [loading, setLoading] = useState(false);
+    const theme = useTheme();
 
     const handleRegister = async () => {
-        if (!email || !password) {
-            Alert.alert('Error', 'Please fill all fields');
+        if (!email || !password || !fullName) {
+            Alert.alert('Error', 'Please fill in all required fields');
             return;
         }
         if (password.length < 6) {
@@ -19,136 +35,176 @@ const RegisterScreen = ({ navigation }) => {
         }
         setLoading(true);
         try {
-            await register(email, password);
+            await register({
+                email,
+                password,
+                full_name: fullName,
+                phone
+            });
+            // Registration success is handled in AuthContext (usually auto-login or redirect)
         } catch (error) {
-            Alert.alert('Error', 'Registration failed. Try a different email.');
+            Alert.alert('Error', 'Registration failed. Please check your details and internet connection.');
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.container}
-        >
-            <View style={styles.content}>
-                <Text style={styles.title}>QWIK<Text style={{ color: '#fff' }}>TRANSFERS</Text></Text>
-                <Text style={styles.subtitle}>Get started with your first transfer.</Text>
-
-                <View style={styles.form}>
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Email Address</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="name@example.com"
-                            placeholderTextColor="#64748b"
-                            value={email}
-                            onChangeText={setEmail}
-                            autoCapitalize="none"
-                            keyboardType="email-address"
-                        />
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+            <StatusBar barStyle={theme.isDark ? "light-content" : "dark-content"} />
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={styles.flex}
+            >
+                <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                    <View style={styles.header}>
+                        <Text style={[styles.title, { color: theme.primary }]}>JOIN<Text style={{ color: theme.text }}> QWIKTRANSFERS</Text></Text>
+                        <Text style={[styles.subtitle, { color: theme.textMuted }]}>Create an account to start sending</Text>
                     </View>
 
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Password</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Minimum 6 characters"
-                            placeholderTextColor="#64748b"
-                            value={password}
-                            onChangeText={setPassword}
-                            secureTextEntry
-                        />
+                    <View style={styles.form}>
+                        <View style={styles.inputGroup}>
+                            <Text style={[styles.label, { color: theme.textMuted }]}>Full Legal Name</Text>
+                            <TextInput
+                                style={[styles.input, { backgroundColor: theme.input, borderColor: theme.border, color: theme.text }]}
+                                placeholder="John Doe"
+                                placeholderTextColor={theme.textMuted}
+                                value={fullName}
+                                onChangeText={setFullName}
+                            />
+                        </View>
+
+                        <View style={styles.inputGroup}>
+                            <Text style={[styles.label, { color: theme.textMuted }]}>Email</Text>
+                            <TextInput
+                                style={[styles.input, { backgroundColor: theme.input, borderColor: theme.border, color: theme.text }]}
+                                placeholder="name@example.com"
+                                placeholderTextColor={theme.textMuted}
+                                value={email}
+                                onChangeText={setEmail}
+                                autoCapitalize="none"
+                                keyboardType="email-address"
+                            />
+                        </View>
+
+                        <View style={styles.inputGroup}>
+                            <Text style={[styles.label, { color: theme.textMuted }]}>Phone Number (Optional)</Text>
+                            <TextInput
+                                style={[styles.input, { backgroundColor: theme.input, borderColor: theme.border, color: theme.text }]}
+                                placeholder="+1 234 567 890"
+                                placeholderTextColor={theme.textMuted}
+                                value={phone}
+                                onChangeText={setPhone}
+                                keyboardType="phone-pad"
+                            />
+                        </View>
+
+                        <View style={styles.inputGroup}>
+                            <Text style={[styles.label, { color: theme.textMuted }]}>Password</Text>
+                            <TextInput
+                                style={[styles.input, { backgroundColor: theme.input, borderColor: theme.border, color: theme.text }]}
+                                placeholder="••••••••"
+                                placeholderTextColor={theme.textMuted}
+                                value={password}
+                                onChangeText={setPassword}
+                                secureTextEntry={true}
+                            />
+                        </View>
+
+                        <TouchableOpacity
+                            style={[styles.button, { backgroundColor: theme.primary }, loading ? { opacity: 0.7 } : null]}
+                            onPress={handleRegister}
+                            disabled={loading === true}
+                        >
+                            <Text style={styles.buttonText}>{loading ? 'Creating Account...' : 'Sign up'}</Text>
+                        </TouchableOpacity>
                     </View>
 
-                    <TouchableOpacity
-                        style={[styles.button, loading && { opacity: 0.7 }]}
-                        onPress={handleRegister}
-                        disabled={loading}
-                    >
-                        <Text style={styles.buttonText}>{loading ? 'Creating Account...' : 'Create Account'}</Text>
-                    </TouchableOpacity>
-                </View>
-
-                <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-                    <Text style={styles.link}>Already have an account? <Text style={styles.linkBold}>Login instead</Text></Text>
-                </TouchableOpacity>
-            </View>
-        </KeyboardAvoidingView>
+                    <View style={styles.footer}>
+                        <Text style={[styles.footerText, { color: theme.textMuted }]}>Already have an account?</Text>
+                        <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+                            <Text style={[styles.link, { color: theme.primary }]}>Sign in</Text>
+                        </TouchableOpacity>
+                    </View>
+                </ScrollView>
+            </KeyboardAvoidingView>
+        </SafeAreaView>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#0f172a',
     },
-    content: {
+    flex: {
         flex: 1,
-        justifyContent: 'center',
-        padding: 30,
+    },
+    scrollContent: {
+        paddingHorizontal: 24,
+        paddingTop: 60,
+        paddingBottom: 40,
+    },
+    header: {
+        marginBottom: 40,
+        alignItems: 'flex-start',
     },
     title: {
         fontSize: 32,
-        fontWeight: 'bold',
-        textAlign: 'center',
-        color: '#818cf8',
+        letterSpacing: -1,
+        fontWeight: '900',
         marginBottom: 8,
     },
     subtitle: {
-        fontSize: 15,
-        textAlign: 'center',
-        color: '#94a3b8',
-        marginBottom: 40,
+        fontSize: 16,
+        fontWeight: '500',
     },
     form: {
-        backgroundColor: '#1e293b',
-        padding: 24,
-        borderRadius: 16,
-        shadowColor: '#000',
-        shadowOpacity: 0.2,
-        shadowRadius: 10,
-        elevation: 5,
+        width: '100%',
     },
     inputGroup: {
         marginBottom: 20,
     },
     label: {
-        color: '#94a3b8',
         fontSize: 14,
+        fontWeight: '600',
         marginBottom: 8,
-        fontWeight: '500',
     },
     input: {
-        backgroundColor: '#0f172a',
-        padding: 14,
-        borderRadius: 10,
-        color: '#f8fafc',
+        height: 56,
+        borderRadius: 12,
+        paddingHorizontal: 16,
         fontSize: 16,
-        borderWidth: 1,
-        borderColor: '#334155',
+        borderWidth: 1.5,
     },
     button: {
-        backgroundColor: '#6366f1',
-        padding: 16,
-        borderRadius: 10,
+        height: 56,
+        borderRadius: 28,
         alignItems: 'center',
-        marginTop: 10,
+        justifyContent: 'center',
+        marginTop: 16,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 3,
     },
     buttonText: {
         color: 'white',
         fontSize: 16,
         fontWeight: 'bold',
     },
-    link: {
-        color: '#94a3b8',
-        textAlign: 'center',
-        marginTop: 30,
-        fontSize: 14,
+    footer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: 40,
     },
-    linkBold: {
-        color: '#818cf8',
+    footerText: {
+        fontSize: 14,
+        marginRight: 8,
+    },
+    link: {
+        fontSize: 14,
         fontWeight: 'bold',
     },
 });
