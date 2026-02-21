@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -9,17 +9,37 @@ import {
     KeyboardAvoidingView,
     Platform,
     StatusBar,
-    SafeAreaView
+    ActivityIndicator
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import api from '../services/api';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 const LoginScreen = ({ navigation }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const { login } = useAuth();
     const [loading, setLoading] = useState(false);
+    const [rate, setRate] = useState(null);
     const theme = useTheme();
+
+    useEffect(() => {
+        fetchRate();
+    }, []);
+
+    const fetchRate = async () => {
+        try {
+            const response = await api.get('/rates');
+            const rawRate = response.data.rate;
+            // Ensure we display CAD -> GHS (should be > 1)
+            const displayRate = rawRate < 1 ? (1 / rawRate) : rawRate;
+            setRate(displayRate.toFixed(2));
+        } catch (error) {
+            console.log('Failed to fetch rate', error);
+        }
+    };
 
     const handleLogin = async () => {
         if (!email || !password) {
@@ -47,6 +67,19 @@ const LoginScreen = ({ navigation }) => {
                 style={styles.flex}
             >
                 <View style={styles.content}>
+
+                    {/* Rate Display */}
+                    {rate && (
+                        <View style={[styles.rateContainer, { backgroundColor: theme.primary + '10', borderColor: theme.primary + '20' }]}>
+                            <View style={[styles.iconCircle, { backgroundColor: theme.primary }]}>
+                                <Ionicons name="trending-up" size={14} color="#fff" />
+                            </View>
+                            <Text style={[styles.rateText, { color: theme.text }]}>
+                                1 CAD <Text style={{ color: theme.textMuted }}>=</Text> <Text style={{ color: theme.primary, fontFamily: 'Outfit_700Bold' }}>{rate} GHS</Text>
+                            </Text>
+                        </View>
+                    )}
+
                     <View style={styles.header}>
                         <Text style={[styles.title, { color: theme.primary }]}>QWIK<Text style={{ color: theme.text }}>TRANSFERS</Text></Text>
                         <Text style={[styles.subtitle, { color: theme.textMuted }]}>Sign in to your account</Text>
@@ -88,7 +121,11 @@ const LoginScreen = ({ navigation }) => {
                             onPress={handleLogin}
                             disabled={loading === true}
                         >
-                            <Text style={styles.buttonText}>{loading ? 'Signing in...' : 'Sign in'}</Text>
+                            {loading ? (
+                                <ActivityIndicator color="#fff" />
+                            ) : (
+                                <Text style={styles.buttonText}>Sign in</Text>
+                            )}
                         </TouchableOpacity>
                     </View>
 
@@ -115,6 +152,28 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingHorizontal: 24,
         justifyContent: 'center',
+    },
+    rateContainer: {
+        alignSelf: 'flex-start',
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        borderRadius: 20,
+        marginBottom: 20,
+        borderWidth: 1,
+    },
+    iconCircle: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 8,
+    },
+    rateText: {
+        fontSize: 14,
+        fontFamily: 'Outfit_600SemiBold',
     },
     header: {
         marginBottom: 40,

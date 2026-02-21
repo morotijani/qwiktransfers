@@ -6,11 +6,13 @@ import {
     FlatList,
     TouchableOpacity,
     RefreshControl,
-    ActivityIndicator
+    ActivityIndicator,
+    StatusBar
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import api from '../services/api';
 import { useTheme } from '../context/ThemeContext';
-import ShimmerPlaceholder from '../components/ShimmerPlaceholder';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 const NotificationScreen = () => {
     const theme = useTheme();
@@ -43,95 +45,151 @@ const NotificationScreen = () => {
         }
     };
 
+    const getIcon = (type) => {
+        switch (type) {
+            case 'transaction':
+                return 'wallet-outline';
+            case 'rate':
+                return 'trending-up-outline';
+            case 'kyc':
+                return 'shield-checkmark-outline';
+            default:
+                return 'notifications-outline';
+        }
+    };
+
     const renderItem = ({ item }) => (
         <TouchableOpacity
-            style={[styles.item, (!item.isRead === true) ? { backgroundColor: theme.isDark ? 'rgba(99, 102, 241, 0.05)' : 'rgba(99, 102, 241, 0.03)' } : null, { borderBottomColor: theme.border }]}
+            style={[
+                styles.item,
+                { borderBottomColor: theme.border },
+                !item.isRead && { backgroundColor: theme.primary + '05' }
+            ]}
             onPress={() => markAsRead(item.id)}
         >
-            <View style={[styles.iconContainer, { backgroundColor: theme.card }]}>
-                <Text style={styles.icon}>{item.type === 'transaction' ? '💰' : '📢'}</Text>
+            <View style={[styles.iconContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                <Ionicons
+                    name={getIcon(item.type)}
+                    size={22}
+                    color={!item.isRead ? theme.primary : theme.textMuted}
+                />
             </View>
             <View style={styles.content}>
-                <Text style={[styles.message, { color: theme.text }]}>{item.message}</Text>
-                <Text style={[styles.date, { color: theme.textMuted }]}>{new Date(item.createdAt).toLocaleString()}</Text>
+                <Text style={[styles.message, { color: theme.text }]} numberOfLines={2}>
+                    {item.message}
+                </Text>
+                <Text style={[styles.date, { color: theme.textMuted }]}>
+                    {new Date(item.createdAt).toLocaleDateString()} • {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </Text>
             </View>
-            {(item.isRead === false) ? <View style={[styles.unreadDot, { backgroundColor: theme.primary }]} /> : null}
+            {!item.isRead && <View style={[styles.unreadDot, { backgroundColor: theme.primary }]} />}
         </TouchableOpacity>
     );
 
     if (loading) {
         return (
             <View style={[styles.center, { backgroundColor: theme.background }]}>
-                <ActivityIndicator size="large" color={theme.primary} animating={true} />
+                <ActivityIndicator size="large" color={theme.primary} />
             </View>
         );
     }
 
     return (
-        <View style={[styles.container, { backgroundColor: theme.background }]}>
-            <View style={[styles.header, { backgroundColor: theme.card }]}>
-                <Text style={[styles.title, { color: theme.text }]}>Notifications</Text>
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+            <StatusBar barStyle={theme.isDark ? 'light-content' : 'dark-content'} />
+            <View style={styles.header}>
+                <Text style={[styles.title, { color: theme.text }]}>Activity</Text>
+                <TouchableOpacity onPress={fetchNotifications}>
+                    <Ionicons name="refresh-outline" size={24} color={theme.text} />
+                </TouchableOpacity>
             </View>
-            {loading && notifications.length === 0 ? (
-                <View style={{ padding: 20 }}>
-                    {[1, 2, 3, 4, 5].map(i => (
-                        <View key={i} style={{ flexDirection: 'row', marginBottom: 20, alignItems: 'center' }}>
-                            <ShimmerPlaceholder style={{ width: 45, height: 45, borderRadius: 22.5, marginRight: 15 }} />
-                            <View style={{ flex: 1 }}>
-                                <ShimmerPlaceholder style={{ width: '70%', height: 14, marginBottom: 8 }} />
-                                <ShimmerPlaceholder style={{ width: '40%', height: 10 }} />
-                            </View>
-                        </View>
-                    ))}
-                </View>
-            ) : (
-                <FlatList
-                    data={notifications}
-                    renderItem={renderItem}
-                    keyExtractor={item => item.id.toString()}
-                    refreshControl={
-                        <RefreshControl
-                            refreshing={refreshing === true}
-                            onRefresh={() => { setRefreshing(true); fetchNotifications(); }}
-                            tintColor={theme.primary}
-                            enabled={true}
-                        />
-                    }
-                    ListEmptyComponent={<Text style={[styles.empty, { color: theme.textMuted }]}>No new notifications</Text>}
-                />
-            )}
-        </View>
+
+            <FlatList
+                data={notifications}
+                renderItem={renderItem}
+                keyExtractor={item => item.id.toString()}
+                contentContainerStyle={styles.listContent}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={() => { setRefreshing(true); fetchNotifications(); }}
+                        tintColor={theme.primary}
+                        colors={[theme.primary]}
+                    />
+                }
+                ListEmptyComponent={
+                    <View style={styles.emptyContainer}>
+                        <Ionicons name="notifications-off-outline" size={64} color={theme.textMuted} style={{ opacity: 0.3 }} />
+                        <Text style={[styles.empty, { color: theme.textMuted }]}>No new notifications</Text>
+                    </View>
+                }
+            />
+        </SafeAreaView>
     );
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#0f172a' },
-    center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0f172a' },
-    header: { padding: 25, paddingTop: 60, backgroundColor: '#1e293b' },
-    title: { fontSize: 24, fontWeight: 'bold', color: '#fff' },
+    container: { flex: 1 },
+    center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingVertical: 15,
+    },
+    title: {
+        fontSize: 32,
+        fontFamily: 'Outfit_700Bold',
+    },
+    listContent: {
+        paddingBottom: 20,
+    },
     item: {
         flexDirection: 'row',
-        padding: 20,
+        paddingVertical: 16,
+        paddingHorizontal: 20,
         borderBottomWidth: 1,
-        borderBottomColor: '#1e293b',
         alignItems: 'center',
     },
-    unreadItem: { backgroundColor: 'rgba(99, 102, 241, 0.05)' },
     iconContainer: {
-        width: 45,
-        height: 45,
-        borderRadius: 22.5,
-        backgroundColor: '#1e293b',
+        width: 48,
+        height: 48,
+        borderRadius: 24,
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 15,
+        marginRight: 16,
+        borderWidth: 1,
     },
-    icon: { fontSize: 20 },
     content: { flex: 1 },
-    message: { color: '#f8fafc', fontSize: 14, lineHeight: 20 },
-    date: { color: '#64748b', fontSize: 11, marginTop: 5 },
-    unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#6366f1', marginLeft: 10 },
-    empty: { textAlign: 'center', color: '#64748b', marginTop: 50, fontSize: 16 },
+    message: {
+        fontSize: 15,
+        fontFamily: 'Outfit_500Medium',
+        lineHeight: 20
+    },
+    date: {
+        fontSize: 13,
+        fontFamily: 'Outfit_400Regular',
+        marginTop: 4
+    },
+    unreadDot: {
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+        marginLeft: 12
+    },
+    emptyContainer: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 100,
+    },
+    empty: {
+        textAlign: 'center',
+        marginTop: 16,
+        fontSize: 16,
+        fontFamily: 'Outfit_500Medium',
+    },
 });
 
 export default NotificationScreen;

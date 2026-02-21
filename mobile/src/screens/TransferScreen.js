@@ -6,7 +6,6 @@ import {
     TouchableOpacity,
     TextInput,
     ScrollView,
-    SafeAreaView,
     StatusBar,
     Alert,
     ActivityIndicator,
@@ -16,6 +15,7 @@ import {
     Keyboard,
     TouchableWithoutFeedback
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Picker } from '@react-native-picker/picker';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTheme } from '../context/ThemeContext';

@@ -9,10 +9,11 @@ import {
     Alert,
     RefreshControl,
     Image,
-    SafeAreaView,
+    Platform,
     StatusBar,
     Modal
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Picker } from '@react-native-picker/picker';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../context/AuthContext';
@@ -125,11 +126,12 @@ const DashboardScreen = ({ navigation }) => {
 
                 {/* Quick Action Buttons */}
                 <View style={styles.actionGrid}>
-                    {/* <ActionButton icon="add" label="Buy" onPress={() => navigation.navigate('Transfer')} theme={theme} color={theme.primary} /> */}
-                    <ActionButton icon="remove" label="Sell" onPress={() => { }} theme={theme} color={theme.primary} />
+                    {/* <ActionButton icon="add" label="Buy" onPress={() => navigation.navigate('Transfer')} theme={theme} color={theme.primary} />
+                    <ActionButton icon="remove" label="Sell" onPress={() => { }} theme={theme} color={theme.primary} /> */}
                     <ActionButton icon="arrow-up" label="Send" onPress={() => navigation.navigate('Transfer')} theme={theme} color={theme.primary} />
                     <ActionButton icon="arrow-down" label="Receive" onPress={() => { }} theme={theme} color={theme.primary} />
-                    <ActionButton icon="swap-horizontal" label="Convert" onPress={() => { }} theme={theme} color={theme.primary} />
+                    <ActionButton icon="swap-horizontal" label="Rate" onPress={() => { }} theme={theme} color={theme.primary} />
+                    <ActionButton icon="shield-half-outline" label="KYC" onPress={() => { }} theme={theme} color={theme.primary} />
                 </View>
 
                 {/* Verification / Limits Card */}

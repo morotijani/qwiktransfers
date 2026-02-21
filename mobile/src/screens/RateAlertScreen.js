@@ -8,9 +8,9 @@ import {
     ScrollView,
     Alert,
     ActivityIndicator,
-    Keyboard,
-    SafeAreaView
+    Keyboard
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import api from '../services/api';
 import { useTheme } from '../context/ThemeContext';
 import Ionicons from '@expo/vector-icons/Ionicons';

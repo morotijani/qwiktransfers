@@ -6,6 +6,8 @@ import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
+// import RegisterScreen from './src/screens/RegisterScreen';
+import OnboardingScreen from './src/screens/OnboardingScreen';
 import DashboardScreen from './src/screens/DashboardScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import KYCScreen from './src/screens/KYCScreen';
@@ -26,6 +28,7 @@ import {
   Outfit_900Black
 } from '@expo-google-fonts/outfit';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -103,6 +106,7 @@ const Navigation = () => {
           </Stack.Group>
         ) : (
           <Stack.Group>
+            <Stack.Screen name="Onboarding" component={OnboardingScreen} />
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
           </Stack.Group>
@@ -111,6 +115,12 @@ const Navigation = () => {
     </NavigationContainer>
   );
 };
+
+import { useCallback, useEffect } from 'react';
+import * as SplashScreen from 'expo-splash-screen';
+
+// Keep the splash screen visible while we fetch resources
+SplashScreen.preventAutoHideAsync();
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -122,20 +132,26 @@ export default function App() {
     Outfit_900Black
   });
 
+  const onLayoutRootView = useCallback(async () => {
+    if (fontsLoaded) {
+      await SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded]);
+
   if (!fontsLoaded) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0f172a' }}>
-        <ActivityIndicator size="large" color="#6366f1" />
-      </View>
-    );
+    return null;
   }
 
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <StatusBar style="auto" hidden={false} translucent={true} animated={true} />
-        <Navigation />
-      </AuthProvider>
-    </ThemeProvider>
+    <SafeAreaProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <StatusBar style="auto" hidden={false} translucent={true} animated={true} />
+          <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
+            <Navigation />
+          </View>
+        </AuthProvider>
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }
