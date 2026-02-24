@@ -1,4 +1,5 @@
-const { Transaction, User, Rate, SystemConfig } = require('../models');
+const { Transaction, User, Rate, SystemConfig, sequelize } = require('../models');
+const { Op } = require('sequelize');
 const { sendSMS } = require('../services/smsService');
 const { sendTransactionInitiatedEmail, sendTransactionCompletedEmail } = require('../services/emailService');
 const fs = require('fs');
@@ -63,6 +64,11 @@ const createTransaction = async (req, res) => {
 
         const rate_locked_until = new Date(Date.now() + 15 * 60000); // 15 minutes
 
+        // Generate Custom Transaction ID: QT-YYYYMMDD-XXXX
+        const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        const randomPart = Math.random().toString(36).substring(2, 6).toUpperCase();
+        const transaction_id = `QT-${datePart}-${randomPart}`;
+
         const transaction = await Transaction.create({
             userId,
             type: type || 'GHS-CAD',
@@ -73,7 +79,8 @@ const createTransaction = async (req, res) => {
             status: 'pending',
             proof_url: '',
             rate_locked_until,
-            locked_rate: parseFloat(exchange_rate)
+            locked_rate: parseFloat(exchange_rate),
+            transaction_id
         });
 
         // Audit log
@@ -131,7 +138,6 @@ const getTransactions = async (req, res) => {
         }
 
         if (search) {
-            const { Op } = require('sequelize');
             const sequelize = Transaction.sequelize;
             where[Op.or] = [
                 sequelize.where(sequelize.cast(sequelize.col('Transaction.id'), 'TEXT'), { [Op.like]: `%${search}%` }),
@@ -156,6 +162,31 @@ const getTransactions = async (req, res) => {
             pages: Math.ceil(count / limit),
             currentPage: parseInt(page)
         });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+const getTransactionById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const where = {};
+
+        // Allow lookup by ID (PK) or transaction_id (custom String)
+        if (id && isNaN(id)) {
+            where.transaction_id = id;
+        } else if (id) {
+            where[Op.or] = [{ id: id }, { transaction_id: id }];
+        }
+
+        if (req.user.role !== 'admin') {
+            where.userId = req.user.id;
+        }
+
+        const transaction = await Transaction.findOne({ where, include: [{ model: User, as: 'user' }] });
+        if (!transaction) return res.status(404).json({ error: 'Transaction not found' });
+
+        res.json(transaction);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -367,4 +398,4 @@ const getAdminStats = async (req, res) => {
     }
 };
 
-module.exports = { createTransaction, getTransactions, updateStatus, uploadProof, cancelTransaction, exportTransactions, getAdminStats };
+module.exports = { createTransaction, getTransactions, getTransactionById, updateStatus, uploadProof, cancelTransaction, exportTransactions, getAdminStats };

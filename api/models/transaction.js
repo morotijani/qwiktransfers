@@ -26,7 +26,8 @@ module.exports = (sequelize, DataTypes) => {
     proof_url: DataTypes.STRING,
     proof_uploaded_at: DataTypes.DATE,
     sent_at: DataTypes.DATE,
-    vendorId: DataTypes.INTEGER
+    vendorId: DataTypes.INTEGER,
+    transaction_id: DataTypes.STRING
   }, {
     sequelize,
     modelName: 'Transaction',

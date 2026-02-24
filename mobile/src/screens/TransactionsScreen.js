@@ -72,7 +72,10 @@ const TransactionsScreen = ({ navigation }) => {
     const renderItem = ({ item }) => (
         <TouchableOpacity
             style={[styles.txRow, { borderBottomColor: theme.border }]}
-            onPress={() => navigation.navigate('TransactionDetails', { transactionId: item.id, initialData: item })}
+            onPress={() => navigation.navigate('TransactionDetails', {
+                transactionId: item.transaction_id || item.id,
+                initialData: item
+            })}
         >
             <View style={[styles.txIconContainer, { backgroundColor: theme.isDark ? '#292524' : theme.primary + '10' }]}>
                 <Ionicons
@@ -92,7 +95,7 @@ const TransactionsScreen = ({ navigation }) => {
                 </View>
                 <View style={styles.txSub}>
                     <Text style={[styles.txSubtitle, { color: theme.textMuted }]}>
-                        {new Date(item.created_at || item.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        {item.transaction_id || 'Ref Code'} • {new Date(item.created_at || item.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                     </Text>
                     <Text style={[styles.txDetail, { color: getStatusColor(item.status) }]}>
                         {item.status.toUpperCase()}
@@ -116,7 +119,7 @@ const TransactionsScreen = ({ navigation }) => {
                 <FlatList
                     data={transactions}
                     renderItem={renderItem}
-                    keyExtractor={item => item.id.toString()}
+                    keyExtractor={item => (item.transaction_id || item.id).toString()}
                     refreshControl={
                         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />
                     }

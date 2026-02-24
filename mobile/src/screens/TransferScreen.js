@@ -549,9 +549,9 @@ const TransferScreen = ({ navigation }) => {
                 </View>
 
                 <View style={styles.refBox}>
-                    <Text style={styles.refLabel}>REFERENCE CODE</Text>
-                    <Text style={styles.refValue}>{adminReference}</Text>
-                    <Text style={styles.refNote}>Include this code in your transfer description</Text>
+                    <Text style={styles.refLabel}>TRANSACTION REFERENCE</Text>
+                    <Text style={[styles.refValue, { fontSize: 20 }]}>{newTransaction?.transaction_id || adminReference}</Text>
+                    <Text style={styles.refNote}>Share this code for transaction inquiries</Text>
                 </View>
             </View>
         </ScrollView>
@@ -612,7 +612,7 @@ const TransferScreen = ({ navigation }) => {
                             onPress={() => {
                                 if (newTransaction) {
                                     navigation.replace('TransactionDetails', {
-                                        transactionId: newTransaction.id,
+                                        transactionId: newTransaction.transaction_id || newTransaction.id,
                                         initialData: newTransaction
                                     });
                                 } else {

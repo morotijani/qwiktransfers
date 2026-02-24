@@ -197,9 +197,12 @@ const DashboardScreen = ({ navigation }) => {
                     ) : (
                         transactions.map((tx) => (
                             <TouchableOpacity
-                                key={tx.id}
+                                key={tx.transaction_id || tx.id}
                                 style={[styles.txRow, { borderBottomColor: theme.border }]}
-                                onPress={() => navigation.navigate('TransactionDetails', { transactionId: tx.id, initialData: tx })}
+                                onPress={() => navigation.navigate('TransactionDetails', {
+                                    transactionId: tx.transaction_id || tx.id,
+                                    initialData: tx
+                                })}
                             >
                                 <View style={[styles.txIconContainer, { backgroundColor: theme.isDark ? '#292524' : theme.primary + '10' }]}>
                                     <Ionicons
@@ -219,7 +222,7 @@ const DashboardScreen = ({ navigation }) => {
                                     </View>
                                     <View style={styles.txSub}>
                                         <Text style={[styles.txSubtitle, { color: theme.textMuted }]}>
-                                            {tx.recipient_details?.type?.toUpperCase()} • {new Date(tx.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                            {tx.transaction_id || 'Ref Code'} • {new Date(tx.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                                         </Text>
                                         <Text style={[styles.txDetail, { color: getStatusColor(tx.status) }]}>
                                             {tx.status === 'sent' ? '↘ 0.00%' : tx.status.toUpperCase()}

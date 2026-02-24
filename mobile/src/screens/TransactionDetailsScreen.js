@@ -5,7 +5,6 @@ import {
     StyleSheet,
     ScrollView,
     TouchableOpacity,
-    SafeAreaView,
     StatusBar,
     ActivityIndicator,
     Alert,
@@ -281,7 +280,9 @@ const TransactionDetailsScreen = ({ route, navigation }) => {
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Ionicons name="arrow-back" size={24} color={theme.text} />
                 </TouchableOpacity>
-                <Text style={[styles.headerTitle, { color: theme.text }]}>Transaction Details</Text>
+                <Text style={[styles.headerTitle, { color: theme.text }]}>
+                    {transaction?.transaction_id || 'Transaction Details'}
+                </Text>
                 <View style={{ width: 24 }} />
             </View>
 
@@ -292,6 +293,13 @@ const TransactionDetailsScreen = ({ route, navigation }) => {
                 {/* Main Details */}
                 <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
                     <Text style={[styles.cardTitle, { color: theme.text }]}>Transfer Details</Text>
+
+                    <View style={styles.detailRow}>
+                        <Text style={[styles.detailLabel, { color: theme.textMuted }]}>Transaction ID</Text>
+                        <Text style={[styles.detailValue, { color: theme.text, fontFamily: 'Outfit_700Bold' }]}>
+                            {transaction.transaction_id || `#${transaction.id}`}
+                        </Text>
+                    </View>
 
                     <View style={styles.detailRow}>
                         <Text style={[styles.detailLabel, { color: theme.textMuted }]}>Date</Text>
