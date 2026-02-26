@@ -30,7 +30,11 @@ const vendorRoutes = require('./routes/vendorRoutes');
 const systemRoutes = require('./routes/systemRoutes');
 const { startRateWatcher } = require('./rateWatcher');
 
-app.use(cors());
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 
 app.use('/api/auth', authLimiter, authRoutes);
