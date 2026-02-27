@@ -14,13 +14,7 @@
     "dialect": "postgres"
   },
   "production": {
-    "use_env_variable": "DATABASE_URL",
-    "dialect": "postgres",
-    "dialectOptions": {
-      "ssl": {
-        "require": false,
-        "rejectUnauthorized": false
-      }
-    }
+    "DATABASE_URL": "postgres://postgres:y7FOolWeibMoK5Zut8B1UwtrEWbVMUdJQq08GYrRJZhG3xWAmi31tL8LpydaumBM@locos04sc0wok08wkwckwkcc:5432/postgres",
+    "dialect": "postgres"
   }
 }
