@@ -1092,6 +1092,10 @@ const UserDashboard = () => {
 
                             <div style={{ display: 'grid', gap: '16px', fontSize: '0.9rem' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f0f0f0', paddingBottom: '12px' }}>
+                                    <span style={{ color: 'var(--text-muted)' }}>Transaction ID</span>
+                                    <span style={{ fontWeight: 700 }}>{selectedTx.transaction_id}</span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f0f0f0', paddingBottom: '12px' }}>
                                     <span style={{ color: 'var(--text-muted)' }}>Recipient</span>
                                     <span style={{ fontWeight: 700 }}>{selectedTx.recipient_details?.name}</span>
                                 </div>
