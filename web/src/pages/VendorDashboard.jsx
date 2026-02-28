@@ -417,6 +417,7 @@ const VendorDashboard = () => {
                         <table style={{ margin: 0 }}>
                             <thead>
                                 <tr>
+                                    <th>Transaction ID</th>
                                     <th>User</th>
                                     <th>Amount</th>
                                     <th>Status</th>
@@ -435,8 +436,11 @@ const VendorDashboard = () => {
                                         style={{ cursor: 'pointer' }}
                                     >
                                         <td>
-                                            <div style={{ fontWeight: 700 }}>{tx.user?.full_name}</div>
+                                            <div style={{ fontWeight: 700 }}>{tx.transaction_id}</div>
                                             <div style={{ fontSize: '0.8rem', opacity: 0.6 }}>{new Date(tx.createdAt).toLocaleString()}</div>
+                                        </td>
+                                        <td>
+                                            <div style={{ fontWeight: 700 }}>{tx.user?.full_name}</div>
                                         </td>
                                         <td>
                                             <div style={{ fontWeight: 700 }}>
@@ -658,7 +662,7 @@ const VendorDashboard = () => {
                     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
                         <div className="card scale-in" style={{ width: '100%', maxWidth: '500px', padding: 0, overflow: 'hidden' }}>
                             <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <h3 style={{ margin: 0 }}>Transaction Details</h3>
+                                <h3 style={{ margin: 0 }}>Transaction Details (ID: {selectedTx.transaction_id})</h3>
                                 <button onClick={() => setShowTxModal(false)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}>×</button>
                             </div>
                             <div style={{ padding: '24px' }}>

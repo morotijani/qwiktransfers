@@ -6,6 +6,7 @@ const TransactionTable = ({ transactions, updateStatus, setSelectedTx, setShowTx
         <table style={{ marginTop: '0' }}>
             <thead>
                 <tr>
+                    <th>Transaction ID</th>
                     <th>User / Recipient</th>
                     <th>Amount</th>
                     <th>Status</th>
@@ -16,6 +17,10 @@ const TransactionTable = ({ transactions, updateStatus, setSelectedTx, setShowTx
             <tbody>
                 {transactions.map((tx) => (
                     <tr key={tx.id} onClick={() => { setSelectedTx(tx); setShowTxModal(true); }} style={{ cursor: 'pointer' }}>
+                        <td>
+                            <div style={{ fontWeight: 600 }}>{tx.transaction_id}</div>
+                            <div style={{ fontSize: '0.8rem', opacity: 0.6 }}>{new Date(tx.createdAt).toLocaleString()}</div>
+                        </td>
                         <td>
                             <div style={{ fontWeight: 600 }}>{tx.user?.email}</div>
                             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
