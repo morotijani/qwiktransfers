@@ -151,6 +151,16 @@ const UserDashboard = () => {
     const [recipientAccount, setRecipientAccount] = useState('');
     const [fromCurrency, setFromCurrency] = useState('GHS');
     const [toCurrency, setToCurrency] = useState('CAD');
+
+    useEffect(() => {
+        if (user && user.country === 'Canada') {
+            setFromCurrency('CAD');
+            setToCurrency('GHS');
+        } else if (user && user.country === 'Ghana') {
+            setFromCurrency('GHS');
+            setToCurrency('CAD');
+        }
+    }, [user?.country]);
     const [rate, setRate] = useState(0.09);
     const [loading, setLoading] = useState(false);
     const [isGlobalLoading, setIsGlobalLoading] = useState(false);
