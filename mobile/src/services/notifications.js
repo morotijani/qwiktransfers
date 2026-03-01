@@ -50,7 +50,7 @@ export async function registerForPushNotificationsAsync() {
             // e.g., await api.post('/users/push-token', { token });
 
         } catch (e) {
-            console.log('Error getting push token', e);
+            console.log('Error getting push token. Note: Expo Go SDK 53 does not support Android push notifications. Please use a development build.');
         }
     } else {
         console.log('Push Notifications are only supported on physical devices');
