@@ -58,7 +58,8 @@ module.exports = (sequelize, DataTypes) => {
     is_active: {
       type: DataTypes.BOOLEAN,
       defaultValue: true
-    }
+    },
+    expo_push_token: DataTypes.STRING,
   }, {
     sequelize,
     modelName: 'User',

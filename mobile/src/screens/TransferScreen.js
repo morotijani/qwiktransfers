@@ -18,11 +18,16 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Picker } from '@react-native-picker/picker';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { authenticateAsync } from '../services/biometrics';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
+import Button from '../components/Button';
 import api from '../services/api';
 
 const TransferScreen = ({ navigation }) => {
     const theme = useTheme();
+    const { user } = useAuth();
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
     const [pageLoading, setPageLoading] = useState(true);
@@ -32,6 +37,17 @@ const TransferScreen = ({ navigation }) => {
     const [amount, setAmount] = useState('');
     const [fromCurrency, setFromCurrency] = useState('GHS');
     const [toCurrency, setToCurrency] = useState('CAD');
+
+    useEffect(() => {
+        if (user && user.country === 'Canada') {
+            setFromCurrency('CAD');
+            setToCurrency('GHS');
+        } else if (user && user.country === 'Ghana') {
+            setFromCurrency('GHS');
+            setToCurrency('CAD');
+        }
+    }, [user?.country]);
+
     const [rate, setRate] = useState(0.0904);
     const [note, setNote] = useState('');
 
@@ -55,6 +71,7 @@ const TransferScreen = ({ navigation }) => {
     const [showPinModal, setShowPinModal] = useState(false);
     const [pin, setPin] = useState('');
     const [pinLoading, setPinLoading] = useState(false);
+    const [canUseBiometrics, setCanUseBiometrics] = useState(false);
 
     // Constants
     const momoProviders = [
@@ -69,7 +86,15 @@ const TransferScreen = ({ navigation }) => {
 
     useEffect(() => {
         loadInitialData();
+        checkBiometrics();
     }, []);
+
+    const checkBiometrics = async () => {
+        const bioEnabled = await AsyncStorage.getItem('biometricEnabled');
+        if (bioEnabled === 'true') {
+            setCanUseBiometrics(true);
+        }
+    };
 
     useEffect(() => {
         // Default recipient type based on destination
@@ -172,63 +197,84 @@ const TransferScreen = ({ navigation }) => {
         }
     };
 
+    const executeTransaction = async () => {
+        const details = {
+            type: recipientType,
+            name: recipientName,
+            note: note,
+            admin_reference: adminReference
+        };
+
+        if (toCurrency === 'GHS') {
+            if (recipientType === 'momo') {
+                details.momo_provider = momoProvider;
+                details.account = accountNumber;
+            } else {
+                details.bank_name = bankName;
+                details.account = accountNumber;
+            }
+        } else { // CAD
+            if (recipientType === 'interac') {
+                details.interac_email = interacEmail;
+            } else {
+                details.bank_name = bankName || 'Bank Transfer'; // Default if standard bank flow
+                details.account = accountNumber;
+                details.transit_number = transitNumber;
+                details.institution_number = institutionNumber;
+            }
+        }
+
+        const res = await api.post('/transactions', {
+            amount_sent: amount,
+            type: `${fromCurrency}-${toCurrency}`,
+            recipient_details: details
+        });
+
+        setRateLockedUntil(res.data.rate_locked_until);
+
+        // Store full transaction for details navigation
+        if (res.data.transaction) {
+            setNewTransaction(res.data.transaction);
+        } else if (res.data.id) {
+            setNewTransaction(res.data);
+        }
+
+        setShowPinModal(false);
+        setPin('');
+        setStep(4); // Success Step
+    };
+
     const handlePinSubmit = async () => {
         if (pin.length < 4) return;
         setPinLoading(true);
         try {
-            // Verify PIN
             await api.post('/auth/verify-pin', { pin: pin.toString() });
-
-            // If success, proceed to create transaction
-            const details = {
-                type: recipientType,
-                name: recipientName,
-                note: note,
-                admin_reference: adminReference
-            };
-
-            if (toCurrency === 'GHS') {
-                if (recipientType === 'momo') {
-                    details.momo_provider = momoProvider;
-                    details.account = accountNumber;
-                } else {
-                    details.bank_name = bankName;
-                    details.account = accountNumber;
-                }
-            } else { // CAD
-                if (recipientType === 'interac') {
-                    details.interac_email = interacEmail;
-                } else {
-                    details.bank_name = bankName || 'Bank Transfer'; // Default if standard bank flow
-                    details.account = accountNumber;
-                    details.transit_number = transitNumber;
-                    details.institution_number = institutionNumber;
-                }
-            }
-
-            const res = await api.post('/transactions', {
-                amount_sent: amount,
-                type: `${fromCurrency}-${toCurrency}`,
-                recipient_details: details
-            });
-
-            setRateLockedUntil(res.data.rate_locked_until);
-
-            // Store full transaction for details navigation
-            if (res.data.transaction) {
-                setNewTransaction(res.data.transaction);
-            } else if (res.data.id) {
-                setNewTransaction(res.data);
-            }
-
-            setShowPinModal(false);
-            setPin('');
-            setStep(4); // Success Step
-
+            await executeTransaction();
         } catch (error) {
             Alert.alert('Error', error.response?.data?.error || 'PIN Validation Failed');
         } finally {
             setPinLoading(false);
+        }
+    };
+
+    const handleVerifyPress = async () => {
+        if (canUseBiometrics) {
+            const result = await authenticateAsync('Authorize Transfer');
+            if (result.success) {
+                setLoading(true);
+                try {
+                    await executeTransaction();
+                } catch (error) {
+                    Alert.alert('Error', error.response?.data?.error || 'Transaction failed.');
+                } finally {
+                    setLoading(false);
+                }
+            } else {
+                // Fallback to PIN if biometric auth fails or cancels
+                setShowPinModal(true);
+            }
+        } else {
+            setShowPinModal(true);
         }
     };
 
@@ -588,27 +634,27 @@ const TransferScreen = ({ navigation }) => {
             {/* Footer Action Button */}
             <View style={styles.footer}>
                 {step < 3 && (
-                    <TouchableOpacity
-                        style={[styles.mainBtn, { backgroundColor: theme.primary }]}
+                    <Button
+                        style={{ backgroundColor: theme.primary }}
                         onPress={handleContinue}
-                    >
-                        <Text style={styles.mainBtnText}>Continue</Text>
-                    </TouchableOpacity>
+                        label="Continue"
+                    />
                 )}
 
                 {step === 3 && (
-                    <TouchableOpacity
-                        style={[styles.mainBtn, { backgroundColor: theme.primary }]}
-                        onPress={() => setShowPinModal(true)}
-                    >
-                        <Text style={styles.mainBtnText}>Verify & Send</Text>
-                    </TouchableOpacity>
+                    <Button
+                        style={{ backgroundColor: theme.primary }}
+                        onPress={handleVerifyPress}
+                        disabled={loading}
+                        loading={loading}
+                        label="Verify & Send"
+                    />
                 )}
 
                 {step === 4 && (
                     <View style={{ width: '100%', gap: 12 }}>
-                        <TouchableOpacity
-                            style={[styles.mainBtn, { backgroundColor: theme.primary }]}
+                        <Button
+                            style={{ backgroundColor: theme.primary }}
                             onPress={() => {
                                 if (newTransaction) {
                                     navigation.replace('TransactionDetails', {
@@ -619,20 +665,19 @@ const TransferScreen = ({ navigation }) => {
                                     navigation.navigate('Home');
                                 }
                             }}
-                        >
-                            <Text style={styles.mainBtnText}>I Have Sent It</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[styles.secondaryBtn, { borderColor: theme.border }]}
+                            label="I Have Sent It"
+                        />
+                        <Button
+                            style={styles.secondaryBtn}
+                            textStyle={{ color: theme.text }}
                             onPress={() => {
                                 setStep(1);
                                 setAmount('');
                                 setRecipientName('');
                                 setAccountNumber('');
                             }}
-                        >
-                            <Text style={[styles.secondaryBtnText, { color: theme.text }]}>Send Another</Text>
-                        </TouchableOpacity>
+                            label="Send Another"
+                        />
                     </View>
                 )}
             </View>
@@ -662,23 +707,19 @@ const TransferScreen = ({ navigation }) => {
                         />
 
                         <View style={styles.modalActions}>
-                            <TouchableOpacity
+                            <Button
                                 style={[styles.modalBtn, { backgroundColor: theme.input }]}
+                                textStyle={{ color: theme.text }}
                                 onPress={() => setShowPinModal(false)}
-                            >
-                                <Text style={[styles.modalBtnText, { color: theme.text }]}>Cancel</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
+                                label="Cancel"
+                            />
+                            <Button
                                 style={[styles.modalBtn, { backgroundColor: theme.primary }]}
                                 onPress={handlePinSubmit}
                                 disabled={pinLoading}
-                            >
-                                {pinLoading ? (
-                                    <ActivityIndicator color="#fff" size="small" />
-                                ) : (
-                                    <Text style={[styles.modalBtnText, { color: '#fff' }]}>Confirm</Text>
-                                )}
-                            </TouchableOpacity>
+                                loading={pinLoading}
+                                label="Confirm"
+                            />
                         </View>
                     </View>
                 </View>
@@ -811,30 +852,10 @@ const styles = StyleSheet.create({
         padding: 24,
         paddingBottom: Platform.OS === 'ios' ? 10 : 24,
     },
-    mainBtn: {
-        height: 56,
-        borderRadius: 28,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 10,
-    },
-    mainBtnText: {
-        color: '#fff',
-        fontSize: 18,
-        fontWeight: '700',
-        fontFamily: 'Outfit_700Bold',
-    },
     secondaryBtn: {
-        height: 56,
-        borderRadius: 28,
-        alignItems: 'center',
-        justifyContent: 'center',
+        backgroundColor: 'transparent',
         borderWidth: 1.5,
-    },
-    secondaryBtnText: {
-        fontSize: 16,
-        fontWeight: '600',
-        fontFamily: 'Outfit_600SemiBold',
+        borderColor: 'rgba(0,0,0,0.1)', // Will be overridden or theme.border
     },
     receiptCard: {
         padding: 24,
@@ -1002,15 +1023,6 @@ const styles = StyleSheet.create({
     },
     modalBtn: {
         flex: 1,
-        height: 50,
-        borderRadius: 25,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    modalBtnText: {
-        fontSize: 16,
-        fontWeight: '600',
-        fontFamily: 'Outfit_600SemiBold',
     },
 });
 

@@ -6,7 +6,6 @@ import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
-// import RegisterScreen from './src/screens/RegisterScreen';
 import OnboardingScreen from './src/screens/OnboardingScreen';
 import DashboardScreen from './src/screens/DashboardScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
@@ -118,6 +117,8 @@ const Navigation = () => {
 
 import { useCallback, useEffect } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
+import * as Notifications from 'expo-notifications';
+import { registerForPushNotificationsAsync } from './src/services/notifications';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -131,6 +132,25 @@ export default function App() {
     Outfit_700Bold,
     Outfit_900Black
   });
+
+  useEffect(() => {
+    registerForPushNotificationsAsync().then(token => {
+      if (token) console.log('Push setup complete. Token ready.');
+    });
+
+    const notificationListener = Notifications.addNotificationReceivedListener(notification => {
+      console.log('Foreground notification received:', notification);
+    });
+
+    const responseListener = Notifications.addNotificationResponseReceivedListener(response => {
+      console.log('Notification tapped:', response);
+    });
+
+    return () => {
+      Notifications.removeNotificationSubscription(notificationListener);
+      Notifications.removeNotificationSubscription(responseListener);
+    };
+  }, []);
 
   const onLayoutRootView = useCallback(async () => {
     if (fontsLoaded) {

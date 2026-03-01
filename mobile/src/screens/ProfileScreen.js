@@ -19,6 +19,8 @@ import { useTheme } from '../context/ThemeContext';
 import api from '../services/api';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as ImagePicker from 'expo-image-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { isBiometricSupported } from '../services/biometrics';
 
 const ProfileScreen = () => {
     const { user, logout, refreshProfile } = useAuth();
@@ -35,12 +37,43 @@ const ProfileScreen = () => {
     const [newPassword, setNewPassword] = useState('');
     const [pin, setPin] = useState('');
 
+    // Biometrics State
+    const [biometricEnabled, setBiometricEnabled] = useState(false);
+    const [biometricSupported, setBiometricSupported] = useState(false);
+
     useEffect(() => {
         if (user) {
             setFullName(user.full_name || '');
             setPhone(user.phone || '');
         }
     }, [user]);
+
+    useEffect(() => {
+        const checkBiometrics = async () => {
+            const supported = await isBiometricSupported();
+            setBiometricSupported(supported);
+            if (supported) {
+                const saved = await AsyncStorage.getItem('biometricEnabled');
+                if (saved === 'true') {
+                    setBiometricEnabled(true);
+                }
+            }
+        };
+        checkBiometrics();
+    }, []);
+
+    const handleBiometricToggle = async (value) => {
+        setBiometricEnabled(value);
+        await AsyncStorage.setItem('biometricEnabled', value ? 'true' : 'false');
+        if (value) {
+            const currentToken = await AsyncStorage.getItem('token');
+            if (currentToken) {
+                await AsyncStorage.setItem('biometricToken', currentToken);
+            }
+        } else {
+            await AsyncStorage.removeItem('biometricToken');
+        }
+    };
 
     const handleUpdateProfile = async () => {
         if (!fullName || !phone) {
@@ -280,7 +313,7 @@ const ProfileScreen = () => {
                                 thumbColor={theme.isDark ? theme.primary : '#f4f3f4'}
                             />
                         </View>
-                        <View style={[styles.row, { borderBottomWidth: 0 }]}>
+                        <View style={[styles.row, { borderBottomWidth: biometricSupported ? 0.5 : 0 }]}>
                             <Text style={[styles.rowLabel, { color: theme.text }]}>Push Notifications</Text>
                             <Switch
                                 value={notificationsEnabled}
@@ -289,6 +322,17 @@ const ProfileScreen = () => {
                                 thumbColor={notificationsEnabled ? theme.primary : '#f4f3f4'}
                             />
                         </View>
+                        {biometricSupported && (
+                            <View style={[styles.row, { borderBottomWidth: 0 }]}>
+                                <Text style={[styles.rowLabel, { color: theme.text }]}>Biometric Login</Text>
+                                <Switch
+                                    value={biometricEnabled}
+                                    onValueChange={handleBiometricToggle}
+                                    trackColor={{ false: '#767577', true: theme.primary + '50' }}
+                                    thumbColor={biometricEnabled ? theme.primary : '#f4f3f4'}
+                                />
+                            </View>
+                        )}
                     </View>
                 ))}
 

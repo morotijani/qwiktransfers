@@ -549,6 +549,24 @@ const updateAvatar = async (req, res) => {
     }
 };
 
+const updatePushToken = async (req, res) => {
+    try {
+        const { token } = req.body;
+        const user = await User.findByPk(req.user.id);
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        user.expo_push_token = token;
+        await user.save();
+
+        res.json({ message: 'Push token updated successfully' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 module.exports = {
     register,
     login,
@@ -568,5 +586,6 @@ module.exports = {
     createVendor,
     updateUserRegion,
     toggleUserStatus,
-    updateAvatar
+    updateAvatar,
+    updatePushToken
 };

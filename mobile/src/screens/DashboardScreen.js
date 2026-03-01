@@ -16,11 +16,13 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Picker } from '@react-native-picker/picker';
 import * as ImagePicker from 'expo-image-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import api from '../services/api';
 import ShimmerPlaceholder from '../components/ShimmerPlaceholder';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import TransactionCard from '../components/TransactionCard';
 
 const ActionButton = ({ icon, label, onPress, theme, color }) => (
     <TouchableOpacity style={styles.actionItem} onPress={onPress}>
@@ -40,11 +42,30 @@ const DashboardScreen = ({ navigation }) => {
     const [totalSent, setTotalSent] = useState(0);
 
     useEffect(() => {
+        loadCachedData();
         fetchData();
     }, []);
 
+    const loadCachedData = async () => {
+        try {
+            const cachedTxs = await AsyncStorage.getItem('cachedTransactions');
+            const cachedTotal = await AsyncStorage.getItem('cachedTotalSent');
+            if (cachedTxs) {
+                setTransactions(JSON.parse(cachedTxs));
+            }
+            if (cachedTotal) {
+                setTotalSent(parseFloat(cachedTotal));
+            }
+        } catch (e) {
+            console.error('Failed to load cache:', e);
+        }
+    };
+
     const fetchData = async () => {
-        setLoading(true);
+        // Only show loading shimmer if we don't have cached data
+        if (transactions.length === 0) {
+            setLoading(true);
+        }
         await Promise.all([fetchTransactions(), refreshProfile?.()]);
         setLoading(false);
     };
@@ -55,12 +76,15 @@ const DashboardScreen = ({ navigation }) => {
             const txs = res.data.transactions || res.data; // Handle different API response shapes
             setTransactions(txs);
 
-            // Calculate total sent (GHS converted to CAD for a single master number if needed, 
-            // but for Hawala we often just show a primary currency total)
+            // Calculate total sent
             const total = txs
                 .filter(tx => tx.status === 'sent')
                 .reduce((acc, tx) => acc + parseFloat(tx.amount_sent), 0);
             setTotalSent(total);
+
+            // Save to cache for offline mode
+            AsyncStorage.setItem('cachedTransactions', JSON.stringify(txs));
+            AsyncStorage.setItem('cachedTotalSent', total.toString());
         } catch (error) {
             console.error('Fetch Error:', error);
         }
@@ -70,16 +94,6 @@ const DashboardScreen = ({ navigation }) => {
         setRefreshing(true);
         await fetchData();
         setRefreshing(false);
-    };
-
-    const getStatusColor = (status) => {
-        switch (status) {
-            case 'sent': return '#10b981';
-            case 'processing': return '#f59e0b';
-            case 'pending': return '#6366f1';
-            case 'cancelled': return '#ef4444';
-            default: return '#6b7280';
-        }
     };
 
     return (
@@ -196,40 +210,15 @@ const DashboardScreen = ({ navigation }) => {
                         </View>
                     ) : (
                         transactions.map((tx) => (
-                            <TouchableOpacity
+                            <TransactionCard
                                 key={tx.transaction_id || tx.id}
-                                style={[styles.txRow, { borderBottomColor: theme.border }]}
-                                onPress={() => navigation.navigate('TransactionDetails', {
+                                tx={tx}
+                                theme={theme}
+                                onPress={(tx) => navigation.navigate('TransactionDetails', {
                                     transactionId: tx.transaction_id || tx.id,
                                     initialData: tx
                                 })}
-                            >
-                                <View style={[styles.txIconContainer, { backgroundColor: theme.isDark ? '#292524' : theme.primary + '10' }]}>
-                                    <Ionicons
-                                        name={tx.recipient_details?.type === 'bank' ? 'business' : 'phone-portrait'}
-                                        size={20}
-                                        color={theme.primary}
-                                    />
-                                </View>
-                                <View style={styles.txInfo}>
-                                    <View style={styles.txMain}>
-                                        <Text style={[styles.txTitle, { color: theme.text }]} numberOfLines={1}>
-                                            {tx.recipient_details?.name}
-                                        </Text>
-                                        <Text style={[styles.txAmountLarge, { color: theme.text }]}>
-                                            ₵{parseFloat(tx.amount_sent).toLocaleString()}
-                                        </Text>
-                                    </View>
-                                    <View style={styles.txSub}>
-                                        <Text style={[styles.txSubtitle, { color: theme.textMuted }]}>
-                                            {tx.transaction_id || 'Ref Code'} • {new Date(tx.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                                        </Text>
-                                        <Text style={[styles.txDetail, { color: getStatusColor(tx.status) }]}>
-                                            {tx.status === 'sent' ? '↘ 0.00%' : tx.status.toUpperCase()}
-                                        </Text>
-                                    </View>
-                                </View>
-                            </TouchableOpacity>
+                            />
                         ))
                     )}
                 </View>
@@ -399,57 +388,6 @@ const styles = StyleSheet.create({
     },
     listContainer: {
         paddingBottom: 40,
-    },
-    txRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 18,
-        paddingHorizontal: 20,
-        borderBottomWidth: 1,
-    },
-    txIconContainer: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 16,
-    },
-    txInfo: {
-        flex: 1,
-    },
-    txMain: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 4,
-    },
-    txTitle: {
-        fontSize: 16,
-        fontWeight: '600',
-        flex: 1,
-        fontFamily: 'Outfit_600SemiBold',
-    },
-    txAmountLarge: {
-        fontSize: 16,
-        fontWeight: '600',
-        marginLeft: 12,
-        fontFamily: 'Outfit_600SemiBold',
-    },
-    txSub: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    txSubtitle: {
-        fontSize: 13,
-        fontWeight: '400',
-        fontFamily: 'Outfit_400Regular',
-    },
-    txDetail: {
-        fontSize: 13,
-        fontWeight: '600',
-        fontFamily: 'Outfit_600SemiBold',
     },
     emptyContainer: {
         paddingVertical: 40,

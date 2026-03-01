@@ -16,14 +16,42 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import api from '../services/api';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { authenticateAsync } from '../services/biometrics';
 
 const LoginScreen = ({ navigation }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const { login } = useAuth();
+    const { login, loginWithBiometrics } = useAuth();
     const [loading, setLoading] = useState(false);
     const [rate, setRate] = useState(null);
+    const [canUseBiometrics, setCanUseBiometrics] = useState(false);
     const theme = useTheme();
+
+    useEffect(() => {
+        fetchRate();
+        checkBiometricAvailability();
+    }, []);
+
+    const checkBiometricAvailability = async () => {
+        const bioEnabled = await AsyncStorage.getItem('biometricEnabled');
+        const bioToken = await AsyncStorage.getItem('biometricToken');
+        if (bioEnabled === 'true' && bioToken) {
+            setCanUseBiometrics(true);
+        }
+    };
+
+    const handleBiometricLogin = async () => {
+        const result = await authenticateAsync('Sign in to QwikTransfers');
+        if (result.success) {
+            setLoading(true);
+            const loggedIn = await loginWithBiometrics();
+            setLoading(false);
+            if (!loggedIn) {
+                Alert.alert('Session Expired', 'Your session has expired. Please log in with your password again.');
+            }
+        }
+    };
 
     useEffect(() => {
         fetchRate();
@@ -127,6 +155,17 @@ const LoginScreen = ({ navigation }) => {
                                 <Text style={styles.buttonText}>Sign in</Text>
                             )}
                         </TouchableOpacity>
+
+                        {canUseBiometrics && (
+                            <TouchableOpacity
+                                style={[styles.button, { backgroundColor: 'transparent', borderWidth: 2, borderColor: theme.primary, marginTop: 16 }]}
+                                onPress={handleBiometricLogin}
+                                disabled={loading === true}
+                            >
+                                <Ionicons name="finger-print" size={24} color={theme.primary} style={{ marginRight: 8 }} />
+                                <Text style={[styles.buttonText, { color: theme.primary }]}>Use Biometrics</Text>
+                            </TouchableOpacity>
+                        )}
                     </View>
 
                     <View style={styles.footer}>
@@ -224,6 +263,7 @@ const styles = StyleSheet.create({
     button: {
         height: 58,
         borderRadius: 29,
+        flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         marginTop: 16,

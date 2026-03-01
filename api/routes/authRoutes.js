@@ -1,6 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const { register, login, verifyEmail, resendVerification, forgotPassword, resetPassword, getProfile, getAllUsers, updateKYCStatus, submitKYC, updateProfile, changePassword, setPin, verifyPin, updateUserRole, createVendor, updateUserRegion, toggleUserStatus, updateAvatar } = require('../controllers/authController');
+const { register, login, verifyEmail, resendVerification, forgotPassword, resetPassword, getProfile, getAllUsers, updateKYCStatus, submitKYC, updateProfile, changePassword, setPin, verifyPin, updateUserRole,
+    createVendor,
+    updateUserRegion,
+    toggleUserStatus,
+    updateAvatar,
+    updatePushToken
+} = require('../controllers/authController');
 const { verifyToken, verifyAdmin } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
 
@@ -22,7 +28,9 @@ router.post('/create-vendor', verifyAdmin, createVendor);
 router.patch('/update-region', verifyAdmin, updateUserRegion);
 router.patch('/toggle-status', verifyAdmin, toggleUserStatus);
 
+// Avatar & Device Info
 router.post('/avatar', verifyToken, upload.single('avatar'), updateAvatar);
+router.post('/push-token', verifyToken, updatePushToken);
 
 router.post('/kyc', verifyToken, upload.fields([
     { name: 'front', maxCount: 1 },
