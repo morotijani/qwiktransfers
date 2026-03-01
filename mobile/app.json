@@ -8,7 +8,7 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": false,
     "splash": {
-      "image": "./assets/logo-red.png",
+      "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#DC2626"
     },
