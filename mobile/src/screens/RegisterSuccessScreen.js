@@ -1,12 +1,36 @@
-import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, StatusBar } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, SafeAreaView, StatusBar, TouchableOpacity } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import Button from '../components/Button';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import api from '../services/api';
+import Toast from 'react-native-toast-message';
 
 const RegisterSuccessScreen = ({ navigation, route }) => {
     const theme = useTheme();
     const email = route.params?.email || 'your email address';
+
+    const [loading, setLoading] = useState(false);
+
+    const handleResend = async () => {
+        setLoading(true);
+        try {
+            await api.post('/auth/resend-verification', { email: email.toLowerCase().trim() });
+            Toast.show({
+                type: 'success',
+                text1: 'Link Sent!',
+                text2: 'Check your email for the new verification link.'
+            });
+        } catch (error) {
+            Toast.show({
+                type: 'error',
+                text1: 'Failed',
+                text2: error.response?.data?.error || 'Failed to send verification link.'
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
@@ -36,9 +60,11 @@ const RegisterSuccessScreen = ({ navigation, route }) => {
                     style={{ width: '100%', marginTop: 20 }}
                 />
 
-                <Text style={[styles.footerText, { color: theme.textMuted }]}>
-                    Didn't receive an email? Check your spam folder or contact support.
-                </Text>
+                <TouchableOpacity onPress={handleResend} disabled={loading} style={{ marginTop: 24 }}>
+                    <Text style={[styles.footerText, { color: theme.primary, marginTop: 0 }]}>
+                        {loading ? 'Sending...' : "Didn't receive an email? Resend"}
+                    </Text>
+                </TouchableOpacity>
             </View>
         </SafeAreaView>
     );

@@ -18,6 +18,8 @@ import TransactionsScreen from './src/screens/TransactionsScreen';
 import ComplaintsScreen from './src/screens/ComplaintsScreen';
 import ReferralScreen from './src/screens/ReferralScreen';
 import RegisterSuccessScreen from './src/screens/RegisterSuccessScreen';
+import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
+import ResendVerificationScreen from './src/screens/ResendVerificationScreen';
 import { ActivityIndicator, View, Text, Platform, AppState, StyleSheet, Animated, Easing } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import AppLock from './src/components/AppLock';
@@ -123,6 +125,8 @@ const Navigation = () => {
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
             <Stack.Screen name="RegisterSuccess" component={RegisterSuccessScreen} />
+            <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+            <Stack.Screen name="ResendVerification" component={ResendVerificationScreen} />
           </Stack.Group>
         )}
       </Stack.Navigator>

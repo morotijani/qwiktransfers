@@ -176,7 +176,7 @@ const LoginScreen = ({ navigation }) => {
                                     onChangeText={setPassword}
                                     secureTextEntry={true}
                                 />
-                                <TouchableOpacity style={styles.forgotBtn}>
+                                <TouchableOpacity style={styles.forgotBtn} onPress={() => navigation.navigate('ForgotPassword')}>
                                     <Text style={[styles.forgotText, { color: theme.primary }]}>Forgot?</Text>
                                 </TouchableOpacity>
                             </View>
@@ -207,6 +207,10 @@ const LoginScreen = ({ navigation }) => {
                         <Text style={[styles.footerText, { color: theme.textMuted }]}>Don't have an account?</Text>
                         <TouchableOpacity onPress={() => navigation.navigate('Register')}>
                             <Text style={[styles.linkText, { color: theme.primary }]}>Create Account</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={{ marginTop: 24 }} onPress={() => navigation.navigate('ResendVerification')}>
+                            <Text style={[styles.footerText, { color: theme.textMuted }]}>Didn't receive verification email?</Text>
                         </TouchableOpacity>
                     </View>
                 </Animated.View>

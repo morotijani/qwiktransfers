@@ -41,6 +41,9 @@ export default {
     },
     plugins: [
         "expo-font",
+        "expo-sharing",
+        "expo-splash-screen",
+        "expo-status-bar",
         [
             "expo-build-properties",
             {
