@@ -24,6 +24,7 @@ import ShimmerPlaceholder from '../components/ShimmerPlaceholder';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import TransactionCard from '../components/TransactionCard';
 import TransactionChart from '../components/TransactionChart';
+import GlobalNotice from '../components/GlobalNotice';
 
 const ActionButton = ({ icon, label, onPress, theme, color }) => (
     <TouchableOpacity style={styles.actionItem} onPress={onPress}>
@@ -214,6 +215,7 @@ const DashboardScreen = ({ navigation }) => {
                     />
                 }
             >
+                <GlobalNotice />
                 {/* Transaction Analytics Chart */}
                 <TransactionChart
                     data={analyticsData}
