@@ -19,7 +19,7 @@ import Input from '../components/Input';
 import CountryPicker from '../components/CountryPicker';
 
 const countryCodes = {
-    'Ghana': '+233',
+    // 'Ghana': '+233',
     'Canada': '+1',
 };
 
@@ -34,8 +34,8 @@ const RegisterScreen = ({ navigation }) => {
     const [middleName, setMiddleName] = useState('');
     const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
-    const [country, setCountry] = useState('Ghana');
-    const [phone, setPhone] = useState('+233');
+    const [country, setCountry] = useState('Canada');
+    const [phone, setPhone] = useState('+1');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [pin, setPin] = useState('');

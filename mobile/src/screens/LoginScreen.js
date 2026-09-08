@@ -10,7 +10,8 @@ import {
     Image,
     Animated,
     Dimensions,
-    TouchableOpacity
+    TouchableOpacity,
+    ScrollView
 } from 'react-native';
 import { errorToast, successToast } from '../utils/toast';
 import { BlurView } from 'expo-blur';
@@ -32,6 +33,8 @@ const { width, height } = Dimensions.get('window');
 const LoginScreen = ({ navigation }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [otp, setOtp] = useState('');
+    const [show2FA, setShow2FA] = useState(false);
     const { login, loginWithBiometrics } = useAuth();
     const [loading, setLoading] = useState(false);
     const [rate, setRate] = useState(null);
@@ -93,13 +96,23 @@ const LoginScreen = ({ navigation }) => {
     };
 
     const handleLogin = async () => {
-        if (!email || !password) {
+        if (!show2FA && (!email || !password)) {
             errorToast('Error', 'Please enter email and password');
+            return;
+        }
+        if (show2FA && (!otp)) {
+            errorToast('Error', 'Please enter your Transaction PIN / OTP');
             return;
         }
         setLoading(true);
         try {
-            await login(email, password);
+            const res = await login(email, password, show2FA ? otp : null);
+            if (res && res.requires_2fa) {
+                setShow2FA(true);
+                setLoading(false);
+                successToast('PIN Required', 'Please enter your Transaction PIN to continue.');
+                return;
+            }
         } catch (error) {
             if (error.code === 'ECONNABORTED') {
                 errorToast('Timeout', 'Login request timed out. Please check your internet connection.');
@@ -123,11 +136,13 @@ const LoginScreen = ({ navigation }) => {
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={styles.flex}
             >
-                <Animated.View
-                    style={[
+                <Animated.ScrollView
+                    contentContainerStyle={[
                         styles.content,
-                        { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }
+                        { paddingBottom: 40 }
                     ]}
+                    style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }], flex: 1 }}
+                    showsVerticalScrollIndicator={false}
                 >
                     {/* Floating Rate Badge */}
                     {rate && (
@@ -159,36 +174,54 @@ const LoginScreen = ({ navigation }) => {
                         </View>
 
                         <View style={styles.form}>
-                            <View style={styles.inputContainer}>
-                                <Input
-                                    placeholder="Email Address"
-                                    value={email}
-                                    onChangeText={setEmail}
-                                    keyboardType="email-address"
-                                    autoCapitalize="none"
-                                />
-                            </View>
+                            {!show2FA ? (
+                                <>
+                                    <View style={styles.inputContainer}>
+                                        <Input
+                                            placeholder="Email Address"
+                                            value={email}
+                                            onChangeText={setEmail}
+                                            keyboardType="email-address"
+                                            autoCapitalize="none"
+                                        />
+                                    </View>
 
-                            <View style={styles.inputContainer}>
-                                <Input
-                                    placeholder="Password"
-                                    value={password}
-                                    onChangeText={setPassword}
-                                    secureTextEntry={true}
-                                />
-                                <TouchableOpacity style={styles.forgotBtn} onPress={() => navigation.navigate('ForgotPassword')}>
-                                    <Text style={[styles.forgotText, { color: theme.primary }]}>Forgot?</Text>
-                                </TouchableOpacity>
-                            </View>
+                                    <View style={styles.inputContainer}>
+                                        <Input
+                                            placeholder="Password"
+                                            value={password}
+                                            onChangeText={setPassword}
+                                            secureTextEntry={true}
+                                        />
+                                        <TouchableOpacity style={styles.forgotBtn} onPress={() => navigation.navigate('ForgotPassword')}>
+                                            <Text style={[styles.forgotText, { color: theme.primary }]}>Forgot?</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                </>
+                            ) : (
+                                <View style={styles.inputContainer}>
+                                    <Input
+                                        placeholder="Enter Transaction PIN / OTP"
+                                        value={otp}
+                                        onChangeText={setOtp}
+                                        keyboardType="numeric"
+                                        secureTextEntry={true}
+                                        maxLength={6}
+                                    />
+                                    <TouchableOpacity style={styles.forgotBtn} onPress={() => { setShow2FA(false); setOtp(''); }}>
+                                        <Text style={[styles.forgotText, { color: theme.primary }]}>Back</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            )}
 
                             <Button
-                                label="Login"
+                                label={show2FA ? "Verify & Login" : "Login"}
                                 onPress={handleLogin}
                                 loading={loading}
                                 style={styles.loginBtn}
                             />
 
-                            {canUseBiometrics && (
+                            {!show2FA && canUseBiometrics && (
                                 <TouchableOpacity
                                     style={styles.bioBtn}
                                     onPress={handleBiometricLogin}
@@ -203,17 +236,19 @@ const LoginScreen = ({ navigation }) => {
                     </View>
 
                     {/* Footer */}
-                    <View style={styles.footer}>
-                        <Text style={[styles.footerText, { color: theme.textMuted }]}>Don't have an account?</Text>
-                        <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-                            <Text style={[styles.linkText, { color: theme.primary }]}>Create Account</Text>
-                        </TouchableOpacity>
+                    <View style={{ alignItems: 'center', marginTop: 40, paddingBottom: 20 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <Text style={[styles.footerText, { color: theme.textMuted }]}>Don't have an account?</Text>
+                            <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+                                <Text style={[styles.linkText, { color: theme.primary }]}>Create Account</Text>
+                            </TouchableOpacity>
+                        </View>
 
-                        <TouchableOpacity style={{ marginTop: 24 }} onPress={() => navigation.navigate('ResendVerification')}>
-                            <Text style={[styles.footerText, { color: theme.textMuted }]}>Didn't receive verification email?</Text>
+                        <TouchableOpacity style={{ marginTop: 20 }} onPress={() => navigation.navigate('ResendVerification')}>
+                            <Text style={[styles.footerText, { color: theme.textMuted, fontSize: 14 }]}>Didn't receive verification email?</Text>
                         </TouchableOpacity>
                     </View>
-                </Animated.View>
+                </Animated.ScrollView>
             </KeyboardAvoidingView>
         </SafeAreaView>
     );
@@ -227,7 +262,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     content: {
-        flex: 1,
+        flexGrow: 1,
         paddingHorizontal: 24,
         paddingTop: 40,
         alignItems: 'center',

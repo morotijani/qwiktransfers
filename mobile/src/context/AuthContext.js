@@ -44,8 +44,13 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const login = async (email, password) => {
-        const response = await api.post('/auth/login', { email, password });
+    const login = async (email, password, otp = null) => {
+        const response = await api.post('/auth/login', { email, password, otp });
+        
+        if (response.data.requires_2fa) {
+            return response.data;
+        }
+
         await AsyncStorage.setItem('token', response.data.token);
 
         const bioEnabled = await AsyncStorage.getItem('biometricEnabled');
@@ -56,6 +61,8 @@ export const AuthProvider = ({ children }) => {
         setUser(response.data.user);
         setIsAppLocked(false); // Unlock upon successful login
         await syncPushToken();
+        
+        return response.data;
     };
 
     const loginWithBiometrics = async () => {
