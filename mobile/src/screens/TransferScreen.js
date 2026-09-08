@@ -37,18 +37,8 @@ const TransferScreen = ({ navigation }) => {
 
     // Form State
     const [amount, setAmount] = useState('');
-    const [fromCurrency, setFromCurrency] = useState('GHS');
-    const [toCurrency, setToCurrency] = useState('CAD');
-
-    useEffect(() => {
-        if (user && user.country === 'Canada') {
-            setFromCurrency('CAD');
-            setToCurrency('GHS');
-        } else if (user && user.country === 'Ghana') {
-            setFromCurrency('GHS');
-            setToCurrency('CAD');
-        }
-    }, [user?.country]);
+    const fromCurrency = 'CAD';
+    const toCurrency = 'GHS';
 
     const [rate, setRate] = useState(0.0904);
     const [note, setNote] = useState('');
@@ -136,10 +126,7 @@ const TransferScreen = ({ navigation }) => {
         }
     };
 
-        setFromCurrency(prev => prev === 'GHS' ? 'CAD' : 'GHS');
-        setToCurrency(prev => prev === 'CAD' ? 'GHS' : 'CAD');
-        setRate(prev => new Big(1).div(prev).toNumber()); // Invert rate precisely
-        setAmount(''); // Clear amount on switch to avoid confusion
+
 
     const generateReference = () => {
         const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -322,10 +309,9 @@ const TransferScreen = ({ navigation }) => {
                     returnKeyType="done"
                     onSubmitEditing={Keyboard.dismiss}
                 />
-                <TouchableOpacity onPress={handleCurrencySwitch} style={[styles.currencyPill, { backgroundColor: theme.input }]}>
-                    <Text style={[styles.currencyText, { color: theme.text }]}>{fromCurrency}</Text>
-                    <Ionicons name="chevron-down" size={16} color={theme.textMuted} />
-                </TouchableOpacity>
+                <View style={[styles.currencyPill, { backgroundColor: theme.input }]}>
+                    <Text style={[styles.currencyText, { color: theme.text, marginRight: 0 }]}>{fromCurrency}</Text>
+                </View>
             </View>
 
             <View style={styles.conversionContainer}>
