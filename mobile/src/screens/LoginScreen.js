@@ -24,6 +24,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authenticateAsync } from '../services/biometrics';
 import Button from '../components/Button';
 import Input from '../components/Input';
+import OTPInput from '../components/OTPInput';
 
 const { width, height } = Dimensions.get('window');
 
@@ -168,10 +169,12 @@ const LoginScreen = ({ navigation }) => {
 
                     {/* Login Card */}
                     <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                        <View style={styles.cardHeader}>
-                            <Text style={[styles.cardTitle, { color: theme.text }]}>Welcome Back</Text>
-                            <Text style={[styles.cardSubtitle, { color: theme.textMuted }]}>Sign in to your account</Text>
-                        </View>
+                        {!show2FA && (
+                            <View style={styles.cardHeader}>
+                                <Text style={[styles.cardTitle, { color: theme.text }]}>Welcome Back</Text>
+                                <Text style={[styles.cardSubtitle, { color: theme.textMuted }]}>Sign in to your account</Text>
+                            </View>
+                        )}
 
                         <View style={styles.form}>
                             {!show2FA ? (
@@ -199,17 +202,15 @@ const LoginScreen = ({ navigation }) => {
                                     </View>
                                 </>
                             ) : (
-                                <View style={styles.inputContainer}>
-                                    <Input
-                                        placeholder="Enter Transaction PIN / OTP"
-                                        value={otp}
-                                        onChangeText={setOtp}
-                                        keyboardType="numeric"
-                                        secureTextEntry={true}
-                                        maxLength={6}
+                                <View style={[styles.inputContainer, { alignItems: 'center', marginBottom: 24 }]}>
+                                    <Text style={[styles.cardSubtitle, { color: theme.textMuted, marginBottom: 16 }]}>Enter Transaction PIN</Text>
+                                    <OTPInput 
+                                        value={otp} 
+                                        onChange={setOtp} 
+                                        length={4} 
                                     />
-                                    <TouchableOpacity style={styles.forgotBtn} onPress={() => { setShow2FA(false); setOtp(''); }}>
-                                        <Text style={[styles.forgotText, { color: theme.primary }]}>Back</Text>
+                                    <TouchableOpacity style={{ marginTop: 24 }} onPress={() => { setShow2FA(false); setOtp(''); }}>
+                                        <Text style={[styles.forgotText, { color: theme.primary }]}>Back to Login</Text>
                                     </TouchableOpacity>
                                 </View>
                             )}
