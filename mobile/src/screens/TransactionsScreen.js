@@ -173,28 +173,28 @@ const TransactionsScreen = ({ navigation }) => {
                     refreshControl={
                         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />
                     }
-                    ListHeaderComponent={
-                        <View style={styles.statsContainer}>
-                            <View style={[styles.statCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                                <View style={[styles.statIcon, { backgroundColor: '#ffcc0020' }]}>
-                                    <Text style={{ fontSize: 18 }}>🇬🇭</Text>
-                                </View>
-                                <Text style={[styles.statLabel, { color: theme.textMuted }]}>Total Sent (GHS)</Text>
-                                <Text style={[styles.statValue, { color: theme.text }]}>
-                                    ₵{parseFloat(stats.totalSentGHS || 0).toLocaleString()}
-                                </Text>
-                            </View>
-                            <View style={[styles.statCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                                <View style={[styles.statIcon, { backgroundColor: '#ff000020' }]}>
-                                    <Text style={{ fontSize: 18 }}>🇨🇦</Text>
-                                </View>
-                                <Text style={[styles.statLabel, { color: theme.textMuted }]}>Total Sent (CAD)</Text>
-                                <Text style={[styles.statValue, { color: theme.text }]}>
-                                    ${parseFloat(stats.totalSentCAD || 0).toLocaleString()}
-                                </Text>
-                            </View>
-                        </View>
-                    }
+                    // ListHeaderComponent={
+                    //     <View style={styles.statsContainer}>
+                    //         <View style={[styles.statCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                    //             <View style={[styles.statIcon, { backgroundColor: '#ffcc0020' }]}>
+                    //                 <Text style={{ fontSize: 18 }}>🇬🇭</Text>
+                    //             </View>
+                    //             <Text style={[styles.statLabel, { color: theme.textMuted }]}>Total Sent (GHS)</Text>
+                    //             <Text style={[styles.statValue, { color: theme.text }]}>
+                    //                 ₵{parseFloat(stats.totalSentGHS || 0).toLocaleString()}
+                    //             </Text>
+                    //         </View>
+                    //         <View style={[styles.statCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                    //             <View style={[styles.statIcon, { backgroundColor: '#ff000020' }]}>
+                    //                 <Text style={{ fontSize: 18 }}>🇨🇦</Text>
+                    //             </View>
+                    //             <Text style={[styles.statLabel, { color: theme.textMuted }]}>Total Sent (CAD)</Text>
+                    //             <Text style={[styles.statValue, { color: theme.text }]}>
+                    //                 ${parseFloat(stats.totalSentCAD || 0).toLocaleString()}
+                    //             </Text>
+                    //         </View>
+                    //     </View>
+                    // }
                     contentContainerStyle={{ paddingBottom: 20 }}
                     ListEmptyComponent={
                         <View style={styles.emptyContainer}>

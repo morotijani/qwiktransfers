@@ -13,7 +13,7 @@ import {
     StatusBar,
     Modal
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Picker } from '@react-native-picker/picker';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -131,6 +131,8 @@ const DashboardScreen = ({ navigation }) => {
         setRefreshing(false);
     };
 
+    const insets = useSafeAreaInsets();
+
     const getGreeting = () => {
         const hour = new Date().getHours();
         if (hour < 12) return 'Good morning ☀️';
@@ -139,8 +141,9 @@ const DashboardScreen = ({ navigation }) => {
     };
 
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-            <View style={[styles.heroSection, { backgroundColor: theme.primary + '08' }]}>
+        <SafeAreaView edges={['left', 'right', 'bottom']} style={[styles.container, { backgroundColor: theme.background }]}>
+            <StatusBar backgroundColor="transparent" translucent={true} barStyle={theme.isDark ? "light-content" : "dark-content"} />
+            <View style={[styles.heroSection, { backgroundColor: theme.primary + '08', paddingTop: insets.top + 15 }]}>
                 <View style={styles.heroTop}>
                     <TouchableOpacity
                         onPress={() => navigation.navigate('Profile')}

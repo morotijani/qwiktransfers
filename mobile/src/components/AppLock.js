@@ -6,11 +6,11 @@ import {
     TouchableOpacity,
     AppState,
     Modal,
-    SafeAreaView,
     Platform,
     StatusBar,
     Haptics
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ExpoHaptics from 'expo-haptics';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -208,28 +208,30 @@ const styles = StyleSheet.create({
     content: {
         flex: 1,
         alignItems: 'center',
+        justifyContent: 'center',
         paddingHorizontal: 32,
-        paddingTop: 80,
+        paddingTop: Platform.OS === 'ios' ? 20 : 40,
+        paddingBottom: 40,
     },
     header: {
         alignItems: 'center',
-        marginBottom: 60,
+        marginBottom: 40,
     },
     iconCircle: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
+        width: 70,
+        height: 70,
+        borderRadius: 35,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 20,
+        marginBottom: 16,
     },
     title: {
-        fontSize: 28,
+        fontSize: 26,
         fontFamily: 'Outfit_700Bold',
         marginBottom: 8,
     },
     subtitle: {
-        fontSize: 16,
+        fontSize: 15,
         fontFamily: 'Outfit_400Regular',
     },
     formContainer: {
@@ -238,7 +240,7 @@ const styles = StyleSheet.create({
     },
     pinContainer: {
         flexDirection: 'row',
-        marginBottom: 30,
+        marginBottom: 20,
         gap: 20,
     },
     pinDot: {
@@ -249,7 +251,7 @@ const styles = StyleSheet.create({
     },
     errorContainer: {
         height: 24,
-        marginBottom: 30,
+        marginBottom: 20,
     },
     errorText: {
         color: '#ef4444',
@@ -261,17 +263,17 @@ const styles = StyleSheet.create({
         flexWrap: 'wrap',
         width: '100%',
         justifyContent: 'center',
-        gap: 20,
+        gap: 16,
     },
     key: {
-        width: 75,
-        height: 75,
-        borderRadius: 37.5,
+        width: 70,
+        height: 70,
+        borderRadius: 35,
         justifyContent: 'center',
         alignItems: 'center',
     },
     keyText: {
-        fontSize: 30,
+        fontSize: 28,
         fontFamily: 'Outfit_600SemiBold',
     },
     loadingOverlay: {
