@@ -4,7 +4,7 @@ import { useTheme } from '../context/ThemeContext';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 const countries = [
-    { name: 'Ghana', code: '+233', flag: '🇬🇭' },
+    // { name: 'Ghana', code: '+233', flag: '🇬🇭' },
     { name: 'Canada', code: '+1', flag: '🇨🇦' }
 ];
 
