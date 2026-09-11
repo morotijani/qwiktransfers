@@ -40,7 +40,7 @@ const TransferScreen = ({ navigation }) => {
     const fromCurrency = 'CAD';
     const toCurrency = 'GHS';
 
-    const [rate, setRate] = useState(0.0904);
+    const [rate, setRate] = useState(8.90);
     const [note, setNote] = useState('');
 
     // Recipient State
@@ -109,7 +109,8 @@ const TransferScreen = ({ navigation }) => {
                 api.get('/system/payment-methods')
             ]);
 
-            setRate(rateRes.data.rate || 0.0904);
+            const rawRate = rateRes.data.rate || 0.1124;
+            setRate(rawRate < 1 ? (1 / rawRate) : rawRate);
 
             const methods = methodsRes.data;
             const ghs = methods.find(m => m.type === 'momo-ghs');
@@ -190,7 +191,7 @@ const TransferScreen = ({ navigation }) => {
 
     const executeTransaction = async () => {
         if (loading) return; // Robust guard
-        
+
         // Connectivity check
         const netInfo = await NetInfo.fetch();
         if (!netInfo.isConnected) {
@@ -246,7 +247,7 @@ const TransferScreen = ({ navigation }) => {
             setStep(4); // Success Step
         } catch (error) {
             console.error('Transaction execution failed:', error);
-            
+
             // If the request was made but no response was received (Network Error)
             if (!error.response && error.request) {
                 setShowPinModal(false);

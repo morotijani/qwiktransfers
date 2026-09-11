@@ -36,7 +36,7 @@ const sendEmail = async (to, subject, html) => {
             html: `
                 <div style="font-family: 'Outfit', sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 12px; overflow: hidden;">
                     <div style="background-color: ${DEEP_BROWN}; padding: 40px; text-align: center;">
-                        <h1 style="color: ${PEACH}; margin: 0; font-size: 32px; letter-spacing: 4px;">QWIK</h1>
+                        <h1 style="color: ${PEACH}; margin: 0; font-size: 32px; letter-spacing: 4px;">QWIKTRANSFERS</h1>
                         <p style="color: white; opacity: 0.8; margin-top: 10px;">Fast. Secure. Simple.</p>
                     </div>
                     <div style="padding: 40px; background-color: #fff; color: ${DEEP_BROWN}; line-height: 1.6;">

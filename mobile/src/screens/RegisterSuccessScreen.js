@@ -37,7 +37,7 @@ const RegisterSuccessScreen = ({ navigation, route }) => {
             <StatusBar barStyle={theme.isDark ? "light-content" : "dark-content"} />
             <View style={styles.content}>
                 <View style={[styles.iconContainer, { backgroundColor: theme.primary + '15' }]}>
-                    <Ionicons name="party-popper" size={80} color={theme.primary} />
+                    <Ionicons name="checkmark-circle" size={80} color={theme.primary} />
                 </View>
 
                 <Text style={[styles.title, { color: theme.text }]}>Congratulations!</Text>

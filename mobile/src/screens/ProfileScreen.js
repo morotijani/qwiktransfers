@@ -12,7 +12,10 @@ import {
     StatusBar,
     Platform,
     Modal,
-    Alert
+    Alert,
+    KeyboardAvoidingView,
+    TouchableWithoutFeedback,
+    Keyboard
 } from 'react-native';
 import { errorToast, successToast } from '../utils/toast';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -480,52 +483,61 @@ const ProfileScreen = ({ navigation }) => {
                 animationType="slide"
                 onRequestClose={() => setReasonModalVisible(false)}
             >
-                <View style={styles.modalOverlay}>
-                    <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
-                        <View style={styles.modalHeader}>
-                            <Text style={[styles.modalTitle, { color: theme.text }]}>
-                                {dangerAction === 'disable' ? 'Disable Account' : 'Request Deletion'}
-                            </Text>
-                            <TouchableOpacity onPress={() => setReasonModalVisible(false)}>
-                                <Ionicons name="close" size={24} color={theme.text} />
-                            </TouchableOpacity>
-                        </View>
-
-                        <Text style={[styles.modalSubtitle, { color: theme.textMuted }]}>
-                            {dangerAction === 'disable' 
-                                ? 'We are sorry to see you go temporarily. Please tell us why you are disabling your account.'
-                                : 'This action is permanent and will request removal of all your data. Please let us know the reason.'
-                            }
-                        </Text>
-
-                        <TextInput
-                            style={[styles.reasonInput, { color: theme.text, borderColor: theme.border, backgroundColor: theme.background }]}
-                            placeholder="Type your reason here..."
-                            placeholderTextColor={theme.textMuted}
-                            multiline
-                            numberOfLines={4}
-                            value={actionReason}
-                            onChangeText={setActionReason}
-                        />
-
-                        <TouchableOpacity 
-                            style={[
-                                styles.confirmButton, 
-                                { backgroundColor: dangerAction === 'disable' ? '#f59e0b' : '#ef4444' }
-                            ]}
-                            onPress={handleDangerAction}
-                            disabled={loading}
+                <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                    <View style={styles.modalOverlay}>
+                        <KeyboardAvoidingView 
+                            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                            style={{ width: '100%' }}
                         >
-                            {loading ? (
-                                <ActivityIndicator color="#fff" />
-                            ) : (
-                                <Text style={styles.confirmButtonText}>
-                                    Confirm {dangerAction === 'disable' ? 'Deactivation' : 'Deletion'}
-                                </Text>
-                            )}
-                        </TouchableOpacity>
+                            <TouchableWithoutFeedback onPress={() => {}}>
+                                <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
+                                    <View style={styles.modalHeader}>
+                                        <Text style={[styles.modalTitle, { color: theme.text }]}>
+                                            {dangerAction === 'disable' ? 'Disable Account' : 'Request Deletion'}
+                                        </Text>
+                                        <TouchableOpacity onPress={() => setReasonModalVisible(false)}>
+                                            <Ionicons name="close" size={24} color={theme.text} />
+                                        </TouchableOpacity>
+                                    </View>
+
+                                    <Text style={[styles.modalSubtitle, { color: theme.textMuted }]}>
+                                        {dangerAction === 'disable' 
+                                            ? 'We are sorry to see you go temporarily. Please tell us why you are disabling your account.'
+                                            : 'This action is permanent and will request removal of all your data. Please let us know the reason.'
+                                        }
+                                    </Text>
+
+                                    <TextInput
+                                        style={[styles.reasonInput, { color: theme.text, borderColor: theme.border, backgroundColor: theme.background }]}
+                                        placeholder="Type your reason here..."
+                                        placeholderTextColor={theme.textMuted}
+                                        multiline
+                                        numberOfLines={4}
+                                        value={actionReason}
+                                        onChangeText={setActionReason}
+                                    />
+
+                                    <TouchableOpacity 
+                                        style={[
+                                            styles.confirmButton, 
+                                            { backgroundColor: dangerAction === 'disable' ? '#f59e0b' : '#ef4444' }
+                                        ]}
+                                        onPress={handleDangerAction}
+                                        disabled={loading}
+                                    >
+                                        {loading ? (
+                                            <ActivityIndicator color="#fff" />
+                                        ) : (
+                                            <Text style={styles.confirmButtonText}>
+                                                Confirm {dangerAction === 'disable' ? 'Deactivation' : 'Deletion'}
+                                            </Text>
+                                        )}
+                                    </TouchableOpacity>
+                                </View>
+                            </TouchableWithoutFeedback>
+                        </KeyboardAvoidingView>
                     </View>
-                </View>
+                </TouchableWithoutFeedback>
             </Modal>
         </SafeAreaView>
     );
