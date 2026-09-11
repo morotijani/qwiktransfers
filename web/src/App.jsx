@@ -144,8 +144,8 @@ function App() {
                         <Route path="/about-vendor" element={<AboutVendor />} />
                         <Route path="/contact-us" element={<ContactUs />} />
                         <Route path="/vendor-register" element={<VendorRegister />} />
-                        <Route path="/" element={<Home />} />
-                        {/* <Route path="/" element={<Navigate to="/login" replace />} /> */}
+                        {/* <Route path="/" element={<Home />} /> */}
+                        <Route path="/" element={<Navigate to="/login" replace />} />
                     </Routes>
                 </AuthProvider>
             </ThemeProvider>

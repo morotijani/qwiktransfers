@@ -128,7 +128,7 @@ const LandingLayout = ({ children }) => {
                 </div>
 
                 <div className="landing-menu-footer">
-                    <p>© {new Date().getFullYear()} {config.system_name}</p>
+                    <p>&copy; {new Date().getFullYear()} {config.system_name}</p>
                     <div className="landing-socials">
                         <span>Twitter</span>
                         <span>Instagram</span>
@@ -143,7 +143,7 @@ const LandingLayout = ({ children }) => {
             {/* Minimalist Giant Text Footer (Image 2 Style) */}
             <footer className="minimal-giant-footer">
                 <div className="footer-top-row">
-                    <span>©{new Date().getFullYear()} All rights reserved</span>
+                    <span>&copy; {new Date().getFullYear()} All rights reserved</span>
                     <span>info@qwiktransfers.com</span>
                     <Link to="/privacy-policy">Privacy Policy</Link>
                 </div>
